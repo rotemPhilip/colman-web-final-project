@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import path from "path";
+import authRoutes from "./routes/auth";
 
 dotenv.config();
 
@@ -10,8 +12,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve uploaded images as static files
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+// Routes
+app.use("/api/auth", authRoutes);
+
 app.get("/", (_req, res) => {
-  res.send("Server is running");
+  res.send("BiteShare API is running");
 });
 
 const PORT = process.env.PORT || 3001;

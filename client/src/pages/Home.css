@@ -1,0 +1,47 @@
+.home-container {
+  min-height: 100vh;
+  background: #fafafa;
+}
+
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.home-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #ff6b35;
+}
+
+.home-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #555;
+}
+
+.logout-btn {
+  padding: 8px 16px;
+  background: #ff6b35;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.logout-btn:hover {
+  background: #e55a2b;
+}
+
+.home-main {
+  max-width: 600px;
+  margin: 40px auto;
+  text-align: center;
+  color: #888;
+}
