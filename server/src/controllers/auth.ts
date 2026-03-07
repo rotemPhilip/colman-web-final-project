@@ -77,22 +77,22 @@ export const register = async (
 // Login
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    if (!email || !password) {
-      res.status(400).json({ message: "Email and password are required." });
+    if (!username || !password) {
+      res.status(400).json({ message: "Username and password are required." });
       return;
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ username });
     if (!user || !user.password) {
-      res.status(401).json({ message: "Invalid email or password." });
+      res.status(401).json({ message: "Invalid username or password." });
       return;
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      res.status(401).json({ message: "Invalid email or password." });
+      res.status(401).json({ message: "Invalid username or password." });
       return;
     }
 

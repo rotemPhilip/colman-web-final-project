@@ -15,11 +15,21 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Auth endpoints that should NOT trigger auto-refresh on 401
+const authEndpoints = ["/api/auth/login", "/api/auth/register", "/api/auth/refresh", "/api/auth/google"];
+
 // Auto-refresh on 401
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const requestUrl: string = originalRequest?.url || "";
+
+    // Skip auto-refresh for auth endpoints — let the error bubble up to the UI
+    const isAuthRequest = authEndpoints.some((ep) => requestUrl.includes(ep));
+    if (isAuthRequest) {
+      return Promise.reject(error);
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;

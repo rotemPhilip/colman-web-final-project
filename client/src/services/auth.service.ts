@@ -19,11 +19,11 @@ export const registerUser = async (formData: FormData): Promise<AuthResponse> =>
 };
 
 export const loginUser = async (
-  email: string,
+  username: string,
   password: string
 ): Promise<AuthResponse> => {
   const { data } = await api.post<AuthResponse>("/api/auth/login", {
-    email,
+    username,
     password,
   });
   return data;

@@ -5,30 +5,52 @@ import { useAuth } from "../context/useAuth";
 import "./Auth.css";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!username.trim()) {
+      setError("Please enter your username.");
+      return;
+    }
+    if (!password) {
+      setError("Please enter your password.");
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      await login(email, password);
+      await login(username, password);
       navigate("/");
-    } catch {
-      setError("Invalid email or password.");
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosErr = err as { response?: { data?: { message?: string } } };
+        setError(axiosErr.response?.data?.message || "Login failed.");
+      } else {
+        setError("Login failed. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleGoogleSuccess = async (response: CredentialResponse) => {
     if (response.credential) {
+      setIsLoading(true);
       try {
         await googleLogin(response.credential);
         navigate("/");
       } catch {
         setError("Google login failed.");
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -36,33 +58,38 @@ const Login = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1 className="auth-title">🍽️ BiteShare</h1>
+        <div className="auth-logo">🍽️</div>
+        <h1 className="auth-title">BiteShare</h1>
         <p className="auth-subtitle">Sign in to share your dining experiences</p>
 
         {error && <div className="auth-error">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <button type="submit" className="auth-btn">
-            Login
+        <form onSubmit={handleSubmit} className="auth-form" noValidate>
+          <div className="input-group">
+            <span className="input-icon">👤</span>
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
+          <div className="input-group">
+            <span className="input-icon">🔒</span>
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <button type="submit" className="auth-btn" disabled={isLoading}>
+            {isLoading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
         <div className="auth-divider">
-          <span>or</span>
+          <span>or continue with</span>
         </div>
 
         <div className="google-login-wrapper">

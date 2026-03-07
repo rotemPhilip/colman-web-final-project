@@ -39,8 +39,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const data = await loginUser(email, password);
+  const login = async (username: string, password: string) => {
+    const data = await loginUser(username, password);
     saveTokens(data);
     setUser(data.user);
   };
