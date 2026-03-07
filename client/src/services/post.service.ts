@@ -15,13 +15,31 @@ export interface Post {
   updatedAt: string;
 }
 
-export const getPostsByUser = async (userId: string): Promise<Post[]> => {
-  const { data } = await api.get<Post[]>(`/api/posts/user/${userId}`);
+export interface PaginatedPosts {
+  posts: Post[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
+export const getPostsByUser = async (
+  userId: string,
+  page = 1,
+  limit = 10
+): Promise<PaginatedPosts> => {
+  const { data } = await api.get<PaginatedPosts>(
+    `/api/posts/user/${userId}?page=${page}&limit=${limit}`
+  );
   return data;
 };
 
-export const getAllPosts = async (): Promise<Post[]> => {
-  const { data } = await api.get<Post[]>("/api/posts");
+export const getAllPosts = async (
+  page = 1,
+  limit = 10
+): Promise<PaginatedPosts> => {
+  const { data } = await api.get<PaginatedPosts>(
+    `/api/posts?page=${page}&limit=${limit}`
+  );
   return data;
 };
 

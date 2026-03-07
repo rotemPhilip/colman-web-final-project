@@ -466,6 +466,122 @@
   color: #bbb;
 }
 
+/* Post Actions (edit/delete) */
+.profile-post-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px 14px;
+  border-top: 1px solid #f5f5f5;
+}
+
+.profile-post-action-btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.profile-post-action-btn.edit {
+  background: #fff5f0;
+  color: #ff6b35;
+}
+
+.profile-post-action-btn.edit:hover {
+  background: #ffe8db;
+}
+
+.profile-post-action-btn.delete {
+  background: #fff0f0;
+  color: #d32f2f;
+}
+
+.profile-post-action-btn.delete:hover {
+  background: #ffe0e0;
+}
+
+.profile-post-delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #d32f2f;
+  font-weight: 500;
+}
+
+.profile-post-action-btn.confirm-yes {
+  background: #d32f2f;
+  color: white;
+  font-weight: 600;
+}
+
+.profile-post-action-btn.confirm-yes:hover {
+  background: #b71c1c;
+}
+
+.profile-post-action-btn.confirm-no {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.profile-post-action-btn.confirm-no:hover {
+  background: #eee;
+}
+
+.profile-post-edit-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Add Post top button (when posts exist) */
+.profile-add-post-top-btn {
+  margin-bottom: 16px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 14px rgba(255, 107, 53, 0.3);
+}
+
+.profile-add-post-top-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+}
+
+.profile-new-post-form-inline {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  margin-bottom: 16px;
+}
+
+/* Infinite scroll sentinel */
+.profile-posts-sentinel {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.profile-posts-loading-more {
+  color: #999;
+  font-size: 0.88rem;
+}
+
+.profile-posts-end {
+  color: #ccc;
+  font-size: 0.82rem;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .profile-info {

@@ -34,36 +34,53 @@ export const createPost = async (
   }
 };
 
-// Get posts by user ID
+// Get posts by user ID (with pagination)
 export const getPostsByUser = async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
   try {
     const { userId } = req.params;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
+    const skip = (page - 1) * limit;
 
-    const posts = await Post.find({ owner: userId })
-      .populate("owner", "username profileImage")
-      .sort({ createdAt: -1 });
+    const [posts, total] = await Promise.all([
+      Post.find({ owner: userId })
+        .populate("owner", "username profileImage")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Post.countDocuments({ owner: userId }),
+    ]);
 
-    res.json(posts);
+    res.json({ posts, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
     console.error("Get posts by user error:", err);
     res.status(500).json({ message: "Server error." });
   }
 };
 
-// Get all posts
+// Get all posts (with pagination)
 export const getAllPosts = async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
   try {
-    const posts = await Post.find()
-      .populate("owner", "username profileImage")
-      .sort({ createdAt: -1 });
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
+    const skip = (page - 1) * limit;
 
-    res.json(posts);
+    const [posts, total] = await Promise.all([
+      Post.find()
+        .populate("owner", "username profileImage")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Post.countDocuments(),
+    ]);
+
+    res.json({ posts, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
     console.error("Get all posts error:", err);
     res.status(500).json({ message: "Server error." });

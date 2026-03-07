@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type ChangeEvent, type FormEvent } from "react";
+import { useState, useEffect, useRef, useCallback, type ChangeEvent, type FormEvent } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import {
@@ -9,6 +9,8 @@ import {
 import {
   getPostsByUser,
   createPost,
+  updatePost,
+  deletePost,
   type Post,
 } from "../services/post.service";
 import "./Profile.css";
@@ -24,6 +26,12 @@ const Profile = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Edit state
   const [isEditing, setIsEditing] = useState(false);
@@ -44,6 +52,19 @@ const Profile = () => {
   const [creatingPost, setCreatingPost] = useState(false);
   const newPostImageRef = useRef<HTMLInputElement>(null);
 
+  // Edit post state
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [editPostDishName, setEditPostDishName] = useState("");
+  const [editPostRestaurant, setEditPostRestaurant] = useState("");
+  const [editPostDescription, setEditPostDescription] = useState("");
+  const [editPostImage, setEditPostImage] = useState<File | null>(null);
+  const [editPostPreview, setEditPostPreview] = useState("");
+  const [savingPost, setSavingPost] = useState(false);
+  const editPostImageRef = useRef<HTMLInputElement>(null);
+
+  // Delete confirm
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+
   const isOwnProfile = user?._id === id;
 
   useEffect(() => {
@@ -52,12 +73,14 @@ const Profile = () => {
       setLoading(true);
       setError("");
       try {
-        const [userData, userPosts] = await Promise.all([
+        const [userData, postData] = await Promise.all([
           getUserById(id),
-          getPostsByUser(id),
+          getPostsByUser(id, 1, 6),
         ]);
         setProfile(userData);
-        setPosts(userPosts);
+        setPosts(postData.posts);
+        setTotalPages(postData.pages);
+        setPage(1);
       } catch {
         setError("Failed to load profile.");
       } finally {
@@ -66,6 +89,40 @@ const Profile = () => {
     };
     fetchData();
   }, [id]);
+
+  // Fetch more posts for infinite scroll
+  const fetchMorePosts = useCallback(async () => {
+    if (!id || loadingMore || page >= totalPages) return;
+    setLoadingMore(true);
+    try {
+      const result = await getPostsByUser(id, page + 1, 6);
+      setPosts((prev) => [...prev, ...result.posts]);
+      setTotalPages(result.pages);
+      setPage(page + 1);
+    } catch {
+      // silent fail for load more
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [id, page, totalPages, loadingMore]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchMorePosts();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [fetchMorePosts]);
 
   const handleEditStart = () => {
     if (!profile) return;
@@ -179,6 +236,62 @@ const Profile = () => {
     setNewDescription("");
     setNewPostImage(null);
     setNewPostPreview("");
+  };
+
+  // ---- Edit Post ----
+  const startEditPost = (post: Post) => {
+    setEditingPostId(post._id);
+    setEditPostDishName(post.dishName);
+    setEditPostRestaurant(post.restaurant);
+    setEditPostDescription(post.description);
+    setEditPostImage(null);
+    setEditPostPreview(post.image ? getImageUrl(post.image) : "");
+  };
+
+  const cancelEditPost = () => {
+    setEditingPostId(null);
+    setEditPostImage(null);
+    setEditPostPreview("");
+  };
+
+  const handleEditPostImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setEditPostImage(file);
+      setEditPostPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleEditPostSave = async (postId: string) => {
+    if (!editPostDishName.trim() || !editPostRestaurant.trim() || !editPostDescription.trim()) return;
+    setSavingPost(true);
+    setError("");
+    try {
+      const fd = new FormData();
+      fd.append("dishName", editPostDishName.trim());
+      fd.append("restaurant", editPostRestaurant.trim());
+      fd.append("description", editPostDescription.trim());
+      if (editPostImage) fd.append("image", editPostImage);
+      const updated = await updatePost(postId, fd);
+      setPosts((prev) => prev.map((p) => (p._id === postId ? updated : p)));
+      cancelEditPost();
+    } catch {
+      setError("Failed to update post.");
+    } finally {
+      setSavingPost(false);
+    }
+  };
+
+  // ---- Delete Post ----
+  const handleDeletePost = async (postId: string) => {
+    setDeletingPostId(null);
+    setError("");
+    try {
+      await deletePost(postId);
+      setPosts((prev) => prev.filter((p) => p._id !== postId));
+    } catch {
+      setError("Failed to delete post.");
+    }
   };
 
   if (loading) {
@@ -407,27 +520,198 @@ const Profile = () => {
             )}
           </div>
         ) : (
-          <div className="profile-posts-grid">
-            {posts.map((post) => (
-              <div key={post._id} className="profile-post-card">
-                {post.image && (
-                  <img
-                    src={getImageUrl(post.image)}
-                    alt={post.dishName}
-                    className="profile-post-image"
+          <>
+            {isOwnProfile && (
+              <button
+                className="profile-add-post-top-btn"
+                onClick={() => setShowNewPost(!showNewPost)}
+              >
+                {showNewPost ? "✕ Cancel" : "+ New Post"}
+              </button>
+            )}
+            {isOwnProfile && showNewPost && (
+              <form onSubmit={handleCreatePost} className="profile-new-post-form profile-new-post-form-inline">
+                <input
+                  type="text"
+                  placeholder="Dish name"
+                  value={newDishName}
+                  onChange={(e) => setNewDishName(e.target.value)}
+                  className="profile-new-post-input"
+                />
+                <input
+                  type="text"
+                  placeholder="Restaurant name"
+                  value={newRestaurant}
+                  onChange={(e) => setNewRestaurant(e.target.value)}
+                  className="profile-new-post-input"
+                />
+                <textarea
+                  placeholder="Describe your experience..."
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  className="profile-new-post-textarea"
+                  rows={3}
+                />
+                <div className="profile-new-post-image-section">
+                  {newPostPreview && (
+                    <img src={newPostPreview} alt="Preview" className="profile-new-post-preview" />
+                  )}
+                  <button
+                    type="button"
+                    className="profile-new-post-image-btn"
+                    onClick={() => newPostImageRef.current?.click()}
+                  >
+                    📷 {newPostImage ? "Change Photo" : "Add Photo"}
+                  </button>
+                  <input
+                    ref={newPostImageRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleNewPostImageChange}
+                    hidden
                   />
-                )}
-                <div className="profile-post-content">
-                  <h4 className="profile-post-title">{post.dishName}</h4>
-                  <p className="profile-post-restaurant">🎽 {post.restaurant}</p>
-                  <p className="profile-post-text">{post.description}</p>
-                  <span className="profile-post-date">
-                    {new Date(post.createdAt).toLocaleDateString()}
-                  </span>
                 </div>
-              </div>
-            ))}
-          </div>
+                <div className="profile-new-post-actions">
+                  <button
+                    type="submit"
+                    className="profile-save-btn"
+                    disabled={creatingPost || !newDishName.trim() || !newRestaurant.trim() || !newDescription.trim()}
+                  >
+                    {creatingPost ? "Posting..." : "Post"}
+                  </button>
+                  <button
+                    type="button"
+                    className="profile-cancel-btn"
+                    onClick={handleCancelNewPost}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+            <div className="profile-posts-grid">
+              {posts.map((post) => (
+                <div key={post._id} className="profile-post-card">
+                  {editingPostId === post._id ? (
+                    <div className="profile-post-edit-body">
+                      <input
+                        type="text"
+                        value={editPostDishName}
+                        onChange={(e) => setEditPostDishName(e.target.value)}
+                        className="profile-new-post-input"
+                        placeholder="Dish name"
+                      />
+                      <input
+                        type="text"
+                        value={editPostRestaurant}
+                        onChange={(e) => setEditPostRestaurant(e.target.value)}
+                        className="profile-new-post-input"
+                        placeholder="Restaurant name"
+                      />
+                      <textarea
+                        value={editPostDescription}
+                        onChange={(e) => setEditPostDescription(e.target.value)}
+                        className="profile-new-post-textarea"
+                        placeholder="Description"
+                        rows={3}
+                      />
+                      <div className="profile-new-post-image-section">
+                        {editPostPreview && (
+                          <img src={editPostPreview} alt="Preview" className="profile-new-post-preview" />
+                        )}
+                        <button
+                          type="button"
+                          className="profile-new-post-image-btn"
+                          onClick={() => editPostImageRef.current?.click()}
+                        >
+                          📷 {editPostImage ? "Change Photo" : "Update Photo"}
+                        </button>
+                        <input
+                          ref={editPostImageRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEditPostImageChange}
+                          hidden
+                        />
+                      </div>
+                      <div className="profile-new-post-actions">
+                        <button
+                          className="profile-save-btn"
+                          disabled={savingPost}
+                          onClick={() => handleEditPostSave(post._id)}
+                        >
+                          {savingPost ? "Saving..." : "Save"}
+                        </button>
+                        <button className="profile-cancel-btn" onClick={cancelEditPost}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {post.image && (
+                        <img
+                          src={getImageUrl(post.image)}
+                          alt={post.dishName}
+                          className="profile-post-image"
+                        />
+                      )}
+                      <div className="profile-post-content">
+                        <h4 className="profile-post-title">{post.dishName}</h4>
+                        <p className="profile-post-restaurant">📍 {post.restaurant}</p>
+                        <p className="profile-post-text">{post.description}</p>
+                        <span className="profile-post-date">
+                          {new Date(post.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {isOwnProfile && (
+                        <div className="profile-post-actions">
+                          <button
+                            className="profile-post-action-btn edit"
+                            onClick={() => startEditPost(post)}
+                          >
+                            ✏️ Edit
+                          </button>
+                          {deletingPostId === post._id ? (
+                            <div className="profile-post-delete-confirm">
+                              <span>Delete?</span>
+                              <button
+                                className="profile-post-action-btn confirm-yes"
+                                onClick={() => handleDeletePost(post._id)}
+                              >
+                                Yes
+                              </button>
+                              <button
+                                className="profile-post-action-btn confirm-no"
+                                onClick={() => setDeletingPostId(null)}
+                              >
+                                No
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              className="profile-post-action-btn delete"
+                              onClick={() => setDeletingPostId(post._id)}
+                            >
+                              🗑️ Delete
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Infinite scroll sentinel */}
+            <div ref={sentinelRef} className="profile-posts-sentinel">
+              {loadingMore && <p className="profile-posts-loading-more">Loading more...</p>}
+              {!loadingMore && page >= totalPages && posts.length > 0 && (
+                <p className="profile-posts-end">All posts loaded</p>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>
