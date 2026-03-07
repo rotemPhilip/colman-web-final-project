@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import path from "path";
 import authRoutes from "./routes/auth";
+import postRoutes from "./routes/post";
+import userRoutes from "./routes/user";
 
 dotenv.config();
 
@@ -17,6 +19,8 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/posts", postRoutes);
+app.use("/api/users", userRoutes);
 
 app.get("/", (_req, res) => {
   res.send("BiteShare API is running");

@@ -16,6 +16,12 @@ const Home = () => {
       <header className="home-header">
         <h1>🍽️ BiteShare</h1>
         <div className="home-user">
+          <button
+            onClick={() => navigate(`/profile/${user?._id}`)}
+            className="profile-link-btn"
+          >
+            👤 My Profile
+          </button>
           <span>Welcome, {user?.username}</span>
           <button onClick={handleLogout} className="logout-btn">
             Logout

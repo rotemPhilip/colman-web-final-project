@@ -14,6 +14,7 @@ export interface AuthContextType {
   register: (formData: FormData) => Promise<void>;
   googleLogin: (credential: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (updatedUser: Partial<User>) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);

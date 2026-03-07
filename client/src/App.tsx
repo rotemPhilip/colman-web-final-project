@@ -3,6 +3,7 @@ import { useAuth } from "./context/useAuth";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
+import Profile from "./pages/Profile";
 
 function App() {
   const { user, loading } = useAuth();
@@ -28,6 +29,10 @@ function App() {
       <Route
         path="/"
         element={user ? <Home /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/profile/:id"
+        element={user ? <Profile /> : <Navigate to="/login" />}
       />
     </Routes>
   );

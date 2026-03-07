@@ -66,9 +66,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateUser = (updatedUser: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...updatedUser } : prev));
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, googleLogin, logout }}
+      value={{ user, loading, login, register, googleLogin, logout, updateUser }}
     >
       {children}
     </AuthContext.Provider>

@@ -39,6 +39,23 @@
   background: #e55a2b;
 }
 
+.profile-link-btn {
+  padding: 8px 16px;
+  background: transparent;
+  color: #ff6b35;
+  border: 2px solid #ff6b35;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+
+.profile-link-btn:hover {
+  background: #ff6b35;
+  color: white;
+}
+
 .home-main {
   max-width: 600px;
   margin: 40px auto;
