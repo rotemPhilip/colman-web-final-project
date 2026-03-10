@@ -7,6 +7,7 @@ import "./Auth.css";
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login, googleLogin } = useAuth();
@@ -69,7 +70,7 @@ const Login = () => {
             <span className="input-icon">👤</span>
             <input
               type="text"
-              placeholder="Username"
+              placeholder="Username or Email"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
@@ -77,11 +78,19 @@ const Login = () => {
           <div className="input-group">
             <span className="input-icon">🔒</span>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex={-1}
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </button>
           </div>
           <button type="submit" className="auth-btn" disabled={isLoading}>
             {isLoading ? "Signing in..." : "Sign In"}

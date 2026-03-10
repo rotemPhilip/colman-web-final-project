@@ -41,6 +41,14 @@ export const register = async (
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Verify the hash is correct before saving
+    const hashVerified = await bcrypt.compare(password, hashedPassword);
+    if (!hashVerified) {
+      console.error("CRITICAL: bcrypt hash verification failed during registration");
+      res.status(500).json({ message: "Server error." });
+      return;
+    }
+
     const profileImage = req.file
       ? `/uploads/${req.file.filename}`
       : "";
@@ -80,19 +88,22 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      res.status(400).json({ message: "Username and password are required." });
+      res.status(400).json({ message: "Username/email and password are required." });
       return;
     }
 
-    const user = await User.findOne({ username });
+    // Allow login with either username or email
+    const user = await User.findOne({
+      $or: [{ username }, { email: username }],
+    });
     if (!user || !user.password) {
-      res.status(401).json({ message: "Invalid username or password." });
+      res.status(401).json({ message: "Invalid username/email or password." });
       return;
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      res.status(401).json({ message: "Invalid username or password." });
+      res.status(401).json({ message: "Invalid username/email or password." });
       return;
     }
 

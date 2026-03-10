@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
+import PostDetail from "./pages/PostDetail";
 
 function App() {
   const { user, loading } = useAuth();
@@ -33,6 +34,10 @@ function App() {
       <Route
         path="/profile/:id"
         element={user ? <Profile /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/post/:postId"
+        element={user ? <PostDetail /> : <Navigate to="/login" />}
       />
     </Routes>
   );

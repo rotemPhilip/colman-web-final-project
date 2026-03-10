@@ -112,6 +112,26 @@
   box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
 }
 
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  z-index: 1;
+}
+
+.password-toggle:hover {
+  opacity: 1;
+}
+
 .auth-btn {
   padding: 13px;
   background: linear-gradient(135deg, #ff6b35, #ff8c5a);

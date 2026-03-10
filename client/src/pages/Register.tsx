@@ -8,6 +8,7 @@ const Register = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
   const [error, setError] = useState("");
@@ -129,11 +130,19 @@ const Register = () => {
           <div className="input-group">
             <span className="input-icon">🔒</span>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password (min 6 characters)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex={-1}
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </button>
           </div>
           <button type="submit" className="auth-btn" disabled={isLoading}>
             {isLoading ? "Creating account..." : "Create Account"}

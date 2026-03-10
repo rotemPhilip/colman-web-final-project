@@ -474,6 +474,16 @@ const Home = () => {
                       <p className="feed-card-desc">{post.description}</p>
                     </div>
 
+                    {/* Comment count link */}
+                    <div className="feed-card-comments">
+                      <button
+                        className="feed-comments-btn"
+                        onClick={() => navigate(`/post/${post._id}`)}
+                      >
+                        💬 {post.commentCount || 0} Comments
+                      </button>
+                    </div>
+
                     {/* Actions for owner */}
                     {user?._id === post.owner._id && (
                       <div className="feed-card-actions">

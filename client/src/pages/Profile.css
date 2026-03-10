@@ -466,6 +466,30 @@
   color: #bbb;
 }
 
+.profile-post-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.profile-post-comments-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-weight: 500;
+  transition: color 0.2s;
+  border-radius: 6px;
+}
+
+.profile-post-comments-btn:hover {
+  color: #ff6b35;
+  background: #fff5f0;
+}
+
 /* Post Actions (edit/delete) */
 .profile-post-actions {
   display: flex;

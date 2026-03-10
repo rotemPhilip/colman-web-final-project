@@ -1,5 +1,6 @@
 import { Response } from "express";
 import Post from "../models/post";
+import Comment from "../models/comment";
 import { AuthRequest } from "../middleware/auth";
 
 // Create a post
@@ -34,6 +35,26 @@ export const createPost = async (
   }
 };
 
+// Get a single post by ID
+export const getPostById = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const post = await Post.findById(id).populate("owner", "username profileImage");
+    if (!post) {
+      res.status(404).json({ message: "Post not found." });
+      return;
+    }
+    const commentCount = await Comment.countDocuments({ post: post._id });
+    res.json({ ...post.toObject(), commentCount });
+  } catch (err) {
+    console.error("Get post by id error:", err);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
 // Get posts by user ID (with pagination)
 export const getPostsByUser = async (
   req: AuthRequest,
@@ -54,7 +75,19 @@ export const getPostsByUser = async (
       Post.countDocuments({ owner: userId }),
     ]);
 
-    res.json({ posts, total, page, pages: Math.ceil(total / limit) });
+    // Attach comment counts
+    const postIds = posts.map((p) => p._id);
+    const commentCounts = await Comment.aggregate([
+      { $match: { post: { $in: postIds } } },
+      { $group: { _id: "$post", count: { $sum: 1 } } },
+    ]);
+    const countMap = new Map(commentCounts.map((c) => [c._id.toString(), c.count]));
+    const postsWithComments = posts.map((p) => ({
+      ...p.toObject(),
+      commentCount: countMap.get(p._id.toString()) || 0,
+    }));
+
+    res.json({ posts: postsWithComments, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
     console.error("Get posts by user error:", err);
     res.status(500).json({ message: "Server error." });
@@ -80,7 +113,19 @@ export const getAllPosts = async (
       Post.countDocuments(),
     ]);
 
-    res.json({ posts, total, page, pages: Math.ceil(total / limit) });
+    // Attach comment counts
+    const postIds = posts.map((p) => p._id);
+    const commentCounts = await Comment.aggregate([
+      { $match: { post: { $in: postIds } } },
+      { $group: { _id: "$post", count: { $sum: 1 } } },
+    ]);
+    const countMap = new Map(commentCounts.map((c) => [c._id.toString(), c.count]));
+    const postsWithComments = posts.map((p) => ({
+      ...p.toObject(),
+      commentCount: countMap.get(p._id.toString()) || 0,
+    }));
+
+    res.json({ posts: postsWithComments, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
     console.error("Get all posts error:", err);
     res.status(500).json({ message: "Server error." });
@@ -141,6 +186,8 @@ export const deletePost = async (
       return;
     }
 
+    // Delete all comments associated with this post
+    await Comment.deleteMany({ post: post._id });
     await post.deleteOne();
     res.json({ message: "Post deleted." });
   } catch (err) {

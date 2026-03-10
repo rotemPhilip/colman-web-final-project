@@ -11,6 +11,7 @@ export interface Post {
     username: string;
     profileImage: string;
   };
+  commentCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -21,6 +22,11 @@ export interface PaginatedPosts {
   page: number;
   pages: number;
 }
+
+export const getPostById = async (id: string): Promise<Post> => {
+  const { data } = await api.get<Post>(`/api/posts/${id}`);
+  return data;
+};
 
 export const getPostsByUser = async (
   userId: string,

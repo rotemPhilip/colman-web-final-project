@@ -6,6 +6,7 @@ import path from "path";
 import authRoutes from "./routes/auth";
 import postRoutes from "./routes/post";
 import userRoutes from "./routes/user";
+import commentRoutes from "./routes/comment";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/comments", commentRoutes);
 
 app.get("/", (_req, res) => {
   res.send("BiteShare API is running");

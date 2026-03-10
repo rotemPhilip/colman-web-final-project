@@ -660,9 +660,17 @@ const Profile = () => {
                         <h4 className="profile-post-title">{post.dishName}</h4>
                         <p className="profile-post-restaurant">📍 {post.restaurant}</p>
                         <p className="profile-post-text">{post.description}</p>
-                        <span className="profile-post-date">
-                          {new Date(post.createdAt).toLocaleDateString()}
-                        </span>
+                        <div className="profile-post-footer">
+                          <span className="profile-post-date">
+                            {new Date(post.createdAt).toLocaleDateString()}
+                          </span>
+                          <button
+                            className="profile-post-comments-btn"
+                            onClick={() => navigate(`/post/${post._id}`)}
+                          >
+                            💬 {post.commentCount || 0}
+                          </button>
+                        </div>
                       </div>
                       {isOwnProfile && (
                         <div className="profile-post-actions">
