@@ -212,7 +212,10 @@ const Profile = () => {
 
   const handleCreatePost = async (e: FormEvent) => {
     e.preventDefault();
-    if (!newDishName.trim() || !newRestaurant.trim()) return;
+    if (!newDishName.trim() || !newRestaurant.trim()) {
+      showToast("Dish name and restaurant are required.", "error");
+      return;
+    }
 
     setCreatingPost(true);
     try {
@@ -274,7 +277,10 @@ const Profile = () => {
   };
 
   const handleEditPostSave = async (postId: string) => {
-    if (!editPostDishName.trim() || !editPostRestaurant.trim()) return;
+    if (!editPostDishName.trim() || !editPostRestaurant.trim()) {
+      showToast("Dish name and restaurant are required.", "error");
+      return;
+    }
     setSavingPost(true);
     setError("");
     try {

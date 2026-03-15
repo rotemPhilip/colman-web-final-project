@@ -16,6 +16,7 @@ import {
   deletePost,
   type Post,
 } from "../services/post.service";
+import { aiSearch, type AISearchResult } from "../services/ai.service";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const PAGE_SIZE = 6;
@@ -53,6 +54,12 @@ const Home = () => {
   const [error, setError] = useState("");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // AI search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<AISearchResult[] | null>(null);
+  const [searchSummary, setSearchSummary] = useState("");
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
     setToast({ message, type });
@@ -124,7 +131,10 @@ const Home = () => {
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
-    if (!newDishName.trim() || !newRestaurant.trim()) return;
+    if (!newDishName.trim() || !newRestaurant.trim()) {
+      showToast("Dish name and restaurant are required.", "error");
+      return;
+    }
     setCreating(true);
     setError("");
     try {
@@ -178,7 +188,10 @@ const Home = () => {
   };
 
   const handleEditSave = async (postId: string) => {
-    if (!editDishName.trim() || !editRestaurant.trim()) return;
+    if (!editDishName.trim() || !editRestaurant.trim()) {
+      showToast("Dish name and restaurant are required.", "error");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -213,6 +226,32 @@ const Home = () => {
   const handleLogout = async () => {
     await logout();
     navigate("/login");
+  };
+
+  const handleAISearch = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setSearching(true);
+    setSearchResults(null);
+    setSearchSummary("");
+    try {
+      const data = await aiSearch(searchQuery.trim());
+      setSearchResults(data.results);
+      setSearchSummary(data.summary);
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        "AI search failed. Please try again.";
+      showToast(msg, "error");
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchResults(null);
+    setSearchSummary("");
   };
 
   return (
@@ -289,6 +328,44 @@ const Home = () => {
             )}
           </div>
 
+          {/* AI Search Bar */}
+          <form onSubmit={handleAISearch} className="mb-4">
+            <div className="input-group shadow-sm rounded-pill overflow-hidden" style={{ border: "2px solid #e0e7ff" }}>
+              <span className="input-group-text bg-white border-0 ps-3">
+                <i className="bi bi-stars text-primary"></i>
+              </span>
+              <input
+                type="text"
+                className="form-control border-0 py-2"
+                placeholder="AI Search — try &quot;best pasta&quot; or &quot;something sweet&quot;..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ boxShadow: "none" }}
+              />
+              {searchResults !== null && (
+                <button
+                  type="button"
+                  className="btn btn-link text-muted border-0 px-2"
+                  onClick={clearSearch}
+                  title="Clear search"
+                >
+                  <i className="bi bi-x-lg"></i>
+                </button>
+              )}
+              <button
+                type="submit"
+                className="btn btn-primary border-0 px-3"
+                disabled={searching || !searchQuery.trim()}
+              >
+                {searching ? (
+                  <span className="spinner-border spinner-border-sm"></span>
+                ) : (
+                  <i className="bi bi-search"></i>
+                )}
+              </button>
+            </div>
+          </form>
+
           {error && (
             <div className="alert alert-danger py-2 small d-flex align-items-center gap-2 animate-fade-in">
               <i className="bi bi-exclamation-triangle"></i>
@@ -297,8 +374,73 @@ const Home = () => {
             </div>
           )}
 
+          {/* AI Search Results */}
+          {searchResults !== null && (
+            <div className="mb-4 animate-fade-in">
+              {searchSummary && (
+                <div className="alert alert-info border-0 d-flex align-items-start gap-2 py-2 px-3" style={{ background: "linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%)" }}>
+                  <i className="bi bi-stars text-primary mt-1"></i>
+                  <span className="small">{searchSummary}</span>
+                </div>
+              )}
+              {searchResults.length === 0 ? (
+                <div className="text-center py-4">
+                  <i className="bi bi-search text-muted" style={{ fontSize: "2rem" }}></i>
+                  <p className="text-muted small mt-2 mb-0">No matching posts found. Try a different query.</p>
+                </div>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  {searchResults.map(({ post, relevance }) => (
+                    <div
+                      key={post._id}
+                      className="card border-0 shadow-sm overflow-hidden feed-card cursor-pointer"
+                      onClick={() => navigate(`/post/${post._id}`)}
+                    >
+                      <div className="card-header bg-white d-flex align-items-center gap-2 py-2 px-3" style={{ borderBottom: "2px solid #e0e7ff" }}>
+                        <i className="bi bi-stars text-primary" style={{ fontSize: "0.75rem" }}></i>
+                        <span className="small text-primary fw-medium">{relevance}</span>
+                      </div>
+                      {post.image && (
+                        <img
+                          src={getImageUrl(post.image)}
+                          alt={post.dishName}
+                          className="card-img-top"
+                          style={{ maxHeight: 300, objectFit: "cover" }}
+                        />
+                      )}
+                      <div className="card-body py-2 px-3">
+                        <div className="d-flex align-items-center gap-2 mb-1">
+                          {post.owner.profileImage ? (
+                            <img src={getImageUrl(post.owner.profileImage)} alt="" className="avatar-circle-sm" style={{ width: 24, height: 24 }} />
+                          ) : (
+                            <div className="avatar-placeholder avatar-placeholder-sm" style={{ width: 24, height: 24, fontSize: "0.6rem" }}>
+                              {post.owner.username?.charAt(0).toUpperCase() || "?"}
+                            </div>
+                          )}
+                          <span className="fw-semibold small">{post.owner.username}</span>
+                        </div>
+                        <h6 className="fw-bold mb-1">{post.dishName}</h6>
+                        <p className="text-primary small fw-semibold mb-1">
+                          <i className="bi bi-geo-alt-fill me-1"></i>{post.restaurant}
+                        </p>
+                        {post.description && (
+                          <p className="text-muted small mb-0">{post.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="text-center mt-3">
+                <button className="btn btn-outline-primary btn-sm" onClick={clearSearch}>
+                  <i className="bi bi-arrow-left me-1"></i>Back to Feed
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Create Form */}
-          {showCreate && (
+          {searchResults === null && showCreate && (
             <div className="card border-0 shadow-sm mb-4 animate-slide-down">
               <div className="card-body p-4">
                 <div className="d-flex align-items-center gap-2 mb-3">
@@ -398,7 +540,7 @@ const Home = () => {
           )}
 
           {/* Feed */}
-          {initialLoad ? (
+          {searchResults === null && (initialLoad ? (
             <div className="text-center py-5">
               <div className="spinner-border text-primary" role="status">
                 <span className="visually-hidden">Loading...</span>
@@ -625,7 +767,7 @@ const Home = () => {
                 )}
               </div>
             </div>
-          )}
+          ))}
         </div>
       </main>
 

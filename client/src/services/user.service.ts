@@ -14,8 +14,6 @@ export const getUserById = async (id: string): Promise<UserProfile> => {
 };
 
 export const updateProfile = async (formData: FormData): Promise<UserProfile> => {
-  const { data } = await api.put<UserProfile>("/api/users/profile", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const { data } = await api.put<UserProfile>("/api/users/profile", formData);
   return data;
 };

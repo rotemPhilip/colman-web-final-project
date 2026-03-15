@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth";
 import postRoutes from "./routes/post";
 import userRoutes from "./routes/user";
 import commentRoutes from "./routes/comment";
+import aiRoutes from "./routes/ai";
 import { setupSwagger } from "./swagger";
 
 dotenv.config();
@@ -27,6 +28,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/comments", commentRoutes);
+app.use("/api/ai", aiRoutes);
 
 app.get("/", (_req, res) => {
   res.send("BiteShare API is running");
