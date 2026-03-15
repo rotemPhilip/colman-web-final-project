@@ -17,6 +17,22 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 5;
 const RATE_WINDOW = 60 * 1000;
 
+// Global rate limiting: cap total requests across all users to stay under Gemini free tier (10 RPM)
+let globalRequestCount = 0;
+let globalRateLimitReset = Date.now();
+const GLOBAL_RATE_LIMIT = 10;
+
+const checkGlobalLimit = (): boolean => {
+  const now = Date.now();
+  if (now - globalRateLimitReset > RATE_WINDOW) {
+    globalRequestCount = 0;
+    globalRateLimitReset = now;
+  }
+  if (globalRequestCount >= GLOBAL_RATE_LIMIT) return false;
+  globalRequestCount++;
+  return true;
+};
+
 const checkRateLimit = (userId: string): boolean => {
   const now = Date.now();
   const entry = rateLimitMap.get(userId);
@@ -60,6 +76,12 @@ export const aiSearch = async (
       return;
     }
 
+    // Global rate limit check — prevents exceeding Gemini free tier (10 RPM)
+    if (!checkGlobalLimit()) {
+      res.status(429).json({ message: "Server is reaching capacity. Try again in a minute." });
+      return;
+    }
+
     // Fetch posts (limit to 20 for token efficiency)
     const posts = await Post.find()
       .populate("owner", "username profileImage")
@@ -79,7 +101,8 @@ export const aiSearch = async (
       return `${p._id}|${p.dishName}|${p.restaurant}|${desc}|${author}`;
     }).join("\n");
 
-    const model = getGenAI().getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+    const model = getGenAI().getGenerativeModel({ model: "gemini-flash-latest" });
+    console.log(`[AI] Sending request to Gemini for query: "${query.trim()}"`);
 
     const prompt = `Food app search. Posts (id|dish|restaurant|description|author):
 ${postsCompact}

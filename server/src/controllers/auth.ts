@@ -212,21 +212,22 @@ export const refreshToken = async (
     if (!user || !user.refreshTokens.includes(token)) {
       // possible token theft — clear all refresh tokens
       if (user) {
-        user.refreshTokens = [];
-        await user.save();
+        await User.findByIdAndUpdate(user._id, { refreshTokens: [] });
       }
       res.status(403).json({ message: "Invalid refresh token." });
       return;
     }
 
-    // Remove old token and issue new pair
-    user.refreshTokens = user.refreshTokens.filter((t) => t !== token);
-
     const newAccessToken = generateAccessToken(user._id.toString());
     const newRefreshToken = generateRefreshToken(user._id.toString());
 
-    user.refreshTokens.push(newRefreshToken);
-    await user.save();
+    // Atomic update: remove old token, add new one
+    await User.findByIdAndUpdate(user._id, {
+      $pull: { refreshTokens: token },
+    });
+    await User.findByIdAndUpdate(user._id, {
+      $push: { refreshTokens: newRefreshToken },
+    });
 
     res.json({
       accessToken: newAccessToken,
