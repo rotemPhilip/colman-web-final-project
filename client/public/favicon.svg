@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <circle cx="32" cy="32" r="30" fill="#ff6b35"/>
+  <g fill="white" transform="translate(32,32)">
+    <!-- Fork -->
+    <g transform="translate(-10,0) rotate(-15)">
+      <rect x="-1.2" y="-18" width="2.4" height="20" rx="1"/>
+      <rect x="-5" y="-18" width="1.5" height="9" rx="0.7"/>
+      <rect x="-1" y="-18" width="1.5" height="9" rx="0.7"/>
+      <rect x="3" y="-18" width="1.5" height="9" rx="0.7"/>
+      <rect x="-1.2" y="2" width="2.4" height="14" rx="1"/>
+    </g>
+    <!-- Knife -->
+    <g transform="translate(10,0) rotate(15)">
+      <rect x="-1.2" y="-2" width="2.4" height="18" rx="1"/>
+      <path d="M-1.2,-18 Q-1.2,-20 0,-20 Q4,-18 4,-8 L1.2,-2 L-1.2,-2 Z" />
+    </g>
+  </g>
+</svg>

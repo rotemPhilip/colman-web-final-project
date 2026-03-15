@@ -1,17 +1,526 @@
+:root {
+  --bs-primary: #ff6b35;
+  --bs-primary-rgb: 255, 107, 53;
+  --bite-orange: #ff6b35;
+  --bite-orange-dark: #e55a2b;
+  --bite-orange-light: #fff3ee;
+  --bite-bg: #f5f6f8;
+  --bite-card-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  --bite-card-shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.10);
+}
+
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  line-height: 1.5;
-  color: #333;
-  background-color: #fafafa;
+  background-color: var(--bite-bg);
   min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
   min-height: 100vh;
+}
+
+/* Bootstrap primary color overrides */
+.btn-primary {
+  --bs-btn-bg: #ff6b35;
+  --bs-btn-border-color: #ff6b35;
+  --bs-btn-hover-bg: #e55a2b;
+  --bs-btn-hover-border-color: #e55a2b;
+  --bs-btn-active-bg: #d04e22;
+  --bs-btn-active-border-color: #d04e22;
+  --bs-btn-disabled-bg: #ff6b35;
+  --bs-btn-disabled-border-color: #ff6b35;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: #ff6b35;
+  --bs-btn-border-color: #ff6b35;
+  --bs-btn-hover-bg: #ff6b35;
+  --bs-btn-hover-border-color: #ff6b35;
+  --bs-btn-active-bg: #e55a2b;
+  --bs-btn-active-border-color: #e55a2b;
+}
+
+.text-primary {
+  color: #ff6b35 !important;
+}
+
+.bg-primary {
+  background-color: #ff6b35 !important;
+}
+
+a {
+  color: #ff6b35;
+}
+
+a:hover {
+  color: #e55a2b;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+}
+
+.spinner-border.text-primary {
+  color: #ff6b35 !important;
+}
+
+/* Cursor utility */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Navbar polish */
+.navbar {
+  backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.97) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.navbar-brand img {
+  filter: drop-shadow(0 1px 2px rgba(255, 107, 53, 0.3));
+}
+
+/* Card polish */
+.card {
+  border-radius: 16px !important;
+  box-shadow: var(--bite-card-shadow);
+  transition: transform 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s cubic-bezier(.4,0,.2,1);
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--bite-card-shadow-hover) !important;
+}
+
+.card-header {
+  border-radius: 16px 16px 0 0 !important;
+}
+
+.card-footer {
+  border-radius: 0 0 16px 16px !important;
+}
+
+.card-img-top {
+  transition: transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.3s ease;
+}
+
+.card:hover .card-img-top {
+  transform: scale(1.02);
+}
+
+/* Button polish */
+.btn {
+  border-radius: 10px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: all 0.2s cubic-bezier(.4,0,.2,1);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-sm {
+  border-radius: 8px;
+}
+
+.btn-group .btn {
+  border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.btn-group .btn:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+/* Input polish */
+.form-control,
+.input-group-text {
+  border-radius: 10px;
+}
+
+.form-control {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-group .input-group-text:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+.input-group .form-control {
+  border-radius: 0;
+}
+
+.input-group .input-group-text:last-child,
+.input-group .form-control:last-child {
+  border-radius: 0 10px 10px 0;
+}
+
+/* Alert polish */
+.alert {
+  border-radius: 12px;
+  border: none;
+}
+
+/* Feed card image hover zoom */
+.card-img-top:hover {
+  opacity: 0.97;
+}
+
+/* Avatar utilities */
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ff6b35;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.15);
+}
+
+.avatar-circle-sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ff6b35;
+  box-shadow: 0 2px 6px rgba(255, 107, 53, 0.12);
+}
+
+.avatar-circle-lg {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ff6b35;
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.2);
+}
+
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.2);
+}
+
+.avatar-placeholder-sm {
+  width: 36px;
+  height: 36px;
+  font-size: 0.8rem;
+}
+
+.avatar-placeholder-lg {
+  width: 110px;
+  height: 110px;
+  font-size: 2.2rem;
+}
+
+/* Slide-down animation for create forms */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); max-height: 0; }
+  to { opacity: 1; transform: translateY(0); max-height: 600px; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s cubic-bezier(.4,0,.2,1) forwards;
+  overflow: hidden;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s cubic-bezier(.4,0,.2,1) forwards;
+}
+
+/* Post cards stagger animation */
+.feed-card {
+  animation: fadeIn 0.4s cubic-bezier(.4,0,.2,1) both;
+}
+
+/* Floating Action Button */
+.fab {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50% !important;
+  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  z-index: 1000;
+  transition: all 0.25s cubic-bezier(.4,0,.2,1);
+  border: none;
+}
+
+.fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 28px rgba(255, 107, 53, 0.45);
+}
+
+.fab:active {
+  transform: scale(0.95);
+}
+
+/* Toast notification */
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toastOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(20px); }
+}
+
+.toast-notification {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  animation: toastIn 0.3s ease forwards;
+}
+
+.toast-notification.toast-success {
+  background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.toast-notification.toast-error {
+  background: linear-gradient(135deg, #dc3545, #e74c3c);
+}
+
+.toast-notification.hiding {
+  animation: toastOut 0.3s ease forwards;
+}
+
+/* Comment bubble */
+.comment-bubble {
+  background: #f8f9fa;
+  border-radius: 0 14px 14px 14px;
+  padding: 10px 14px;
+  position: relative;
+}
+
+.comment-bubble.own-comment {
+  background: var(--bite-orange-light);
+  border-radius: 14px 0 14px 14px;
+}
+
+/* Empty state illustration */
+.empty-state {
+  padding: 3rem 1rem;
+}
+
+.empty-state-icon {
+  font-size: 3.5rem;
+  opacity: 0.3;
+  margin-bottom: 1rem;
+}
+
+/* Profile banner */
+.profile-banner {
+  height: 140px;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c5a 50%, #f7c59f 100%);
+  border-radius: 16px 16px 0 0;
+  position: relative;
+}
+
+.profile-avatar-wrapper {
+  position: relative;
+  margin-top: -55px;
+}
+
+/* Image upload area */
+.image-upload-area {
+  border: 2px dashed #dee2e6;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fafbfc;
+}
+
+.image-upload-area:hover {
+  border-color: #ff6b35;
+  background: var(--bite-orange-light);
+}
+
+.image-upload-area.has-image {
+  border-style: solid;
+  border-color: #ff6b35;
+  padding: 0.5rem;
+}
+
+/* Delete confirm overlay */
+.delete-confirm-overlay {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  padding: 8px 12px;
+  animation: fadeIn 0.2s ease forwards;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+/* Badge counter */
+.badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0 6px;
+}
+
+/* Avatar edit hover overlay */
+.avatar-edit-wrapper .avatar-remove-overlay {
+  background: rgba(220, 53, 69, 0.7);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+}
+
+.avatar-edit-wrapper:hover .avatar-remove-overlay {
+  opacity: 1;
+}
+
+/* Responsive tweaks */
+@media (max-width: 576px) {
+  .fab {
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    font-size: 1.3rem;
+  }
+
+  .avatar-circle-lg {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatar-placeholder-lg {
+    width: 80px;
+    height: 80px;
+    font-size: 1.8rem;
+  }
+
+  .profile-banner {
+    height: 100px;
+  }
+
+  .profile-avatar-wrapper {
+    margin-top: -40px;
+  }
+}
+
+.avatar-placeholder-md {
+  width: 40px;
+  height: 40px;
+  font-size: 0.9rem;
+}
+
+.avatar-placeholder-lg {
+  width: 100px;
+  height: 100px;
+  font-size: 2.2rem;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Smooth page transitions */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+main {
+  animation: fadeInUp 0.35s ease-out;
+}
+
+/* Delete confirm animation */
+.feed-delete-confirm {
+  animation: fadeInUp 0.15s ease-out;
+}
+
+/* Scrollbar polish */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+/* Auth card animation */
+.card.shadow-lg {
+  animation: fadeInUp 0.4s ease-out;
 }

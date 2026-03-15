@@ -15,7 +15,6 @@ import {
   type Comment,
 } from "../services/comment.service";
 import { getPostById, type Post } from "../services/post.service";
-import "./PostDetail.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const COMMENTS_PAGE_SIZE = 20;
@@ -49,8 +48,14 @@ const PostDetail = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [error, setError] = useState("");
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const getImageUrl = (img?: string) => {
     if (!img) return "";
@@ -133,8 +138,10 @@ const PostDetail = () => {
       setNewComment("");
       // Update local comment count
       setPost((prev) => prev ? { ...prev, commentCount: (prev.commentCount || 0) + 1 } : prev);
+      showToast("Comment posted!");
     } catch {
       setError("Failed to post comment.");
+      showToast("Failed to post comment.", "error");
     } finally {
       setSubmitting(false);
     }
@@ -177,242 +184,310 @@ const PostDetail = () => {
       setComments((prev) => prev.filter((c) => c._id !== commentId));
       // Update local comment count
       setPost((prev) => prev ? { ...prev, commentCount: Math.max(0, (prev.commentCount || 1) - 1) } : prev);
+      showToast("Comment deleted.");
     } catch {
       setError("Failed to delete comment.");
+      showToast("Failed to delete comment.", "error");
     }
   };
 
   if (loadingPost) {
     return (
-      <div className="postdetail-loading">
-        <p>Loading...</p>
+      <div className="d-flex flex-column justify-content-center align-items-center vh-100 bg-light">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <p className="text-muted small mt-2">Loading post...</p>
       </div>
     );
   }
 
   if (!post) {
     return (
-      <div className="postdetail-loading">
-        <p className="postdetail-error-text">{error || "Post not found."}</p>
-        <button className="postdetail-back-btn" onClick={() => navigate("/")}>
-          ← Back to Feed
+      <div className="d-flex flex-column justify-content-center align-items-center vh-100 bg-light gap-3 animate-fade-in">
+        <i className="bi bi-file-earmark-x text-muted" style={{ fontSize: "3rem", opacity: 0.3 }}></i>
+        <p className="text-danger">{error || "Post not found."}</p>
+        <button className="btn btn-primary" onClick={() => navigate("/")}>
+          <i className="bi bi-arrow-left me-1"></i>Back to Feed
         </button>
       </div>
     );
   }
 
   return (
-    <div className="postdetail-container">
-      {/* Header */}
-      <header className="postdetail-header">
-        <button className="postdetail-back-btn" onClick={() => navigate(-1)}>
-          ← Back
-        </button>
-        <h1 className="postdetail-header-title">🍽️ BiteShare</h1>
-        <div style={{ width: 70 }} />
-      </header>
+    <div className="min-vh-100 bg-light">
+      {/* Toast */}
+      {toast && (
+        <div className={`toast-notification toast-${toast.type}`}>
+          <i className={`bi ${toast.type === "success" ? "bi-check-circle" : "bi-exclamation-circle"} me-2`}></i>
+          {toast.message}
+        </div>
+      )}
 
-      <main className="postdetail-main">
-        {/* Post Card */}
-        <div className="postdetail-post-card">
-          <div className="postdetail-post-header">
-            <div
-              className="postdetail-post-author"
-              onClick={() => navigate(`/profile/${post.owner._id}`)}
-            >
-              {post.owner.profileImage ? (
-                <img
-                  src={getImageUrl(post.owner.profileImage)}
-                  alt={post.owner.username}
-                  className="postdetail-author-avatar"
-                />
-              ) : (
-                <div className="postdetail-author-avatar-placeholder">
-                  {post.owner.username?.charAt(0).toUpperCase() || "?"}
-                </div>
-              )}
-              <span className="postdetail-author-name">
-                {post.owner.username}
-              </span>
-            </div>
-            <span className="postdetail-post-date">
-              {new Date(post.createdAt).toLocaleDateString()}
+      {/* Navbar */}
+      <nav className="navbar navbar-expand navbar-light bg-white shadow-sm sticky-top">
+        <div className="container" style={{ maxWidth: 680 }}>
+          <div className="d-flex align-items-center gap-2">
+            <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate(-1)} title="Go back">
+              <i className="bi bi-arrow-left"></i>
+            </button>
+            <span className="navbar-brand fw-bold text-primary mb-0 h1 fs-4 cursor-pointer d-flex align-items-center" onClick={() => navigate("/")}>
+              <img src="/favicon.svg" alt="" width="28" height="28" className="me-2" />
+              BiteShare
             </span>
           </div>
-
-          {post.image && (
-            <img
-              src={getImageUrl(post.image)}
-              alt={post.dishName}
-              className="postdetail-post-image"
-            />
-          )}
-
-          <div className="postdetail-post-body">
-            <h2 className="postdetail-post-dish">{post.dishName}</h2>
-            <p className="postdetail-post-restaurant">📍 {post.restaurant}</p>
-            <p className="postdetail-post-desc">{post.description}</p>
-          </div>
+          <div style={{ width: 1 }} />
         </div>
+      </nav>
 
-        {/* Comments Section */}
-        <div className="postdetail-comments-section">
-          <h3 className="postdetail-comments-title">
-            💬 Comments ({post.commentCount || 0})
-          </h3>
-
-          {/* New Comment Form */}
-          <form
-            className="postdetail-comment-form"
-            onSubmit={handleSubmitComment}
-          >
-            <div className="postdetail-comment-input-row">
-              {user?.profileImage ? (
-                <img
-                  src={getImageUrl(user.profileImage)}
-                  alt={user.username}
-                  className="postdetail-comment-avatar"
-                />
-              ) : (
-                <div className="postdetail-comment-avatar-placeholder">
-                  {user?.username?.charAt(0).toUpperCase() || "?"}
-                </div>
-              )}
-              <input
-                type="text"
-                placeholder="Write a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="postdetail-comment-input"
-              />
-              <button
-                type="submit"
-                className="postdetail-comment-submit"
-                disabled={submitting || !newComment.trim()}
+      <main className="container pb-5" style={{ maxWidth: 640 }}>
+        <div className="py-4">
+          {/* Post Card */}
+          <div className="card border-0 shadow-sm overflow-hidden mb-4 animate-fade-in">
+            <div className="card-header bg-white d-flex justify-content-between align-items-center py-2 px-3">
+              <div
+                className="d-flex align-items-center gap-2 cursor-pointer"
+                onClick={() => navigate(`/profile/${post.owner._id}`)}
               >
-                {submitting ? "..." : "Post"}
-              </button>
-            </div>
-          </form>
-
-          {error && <div className="postdetail-error">{error}</div>}
-
-          {/* Comments List */}
-          {initialLoad ? (
-            <div className="postdetail-comments-loading">Loading comments...</div>
-          ) : comments.length === 0 ? (
-            <div className="postdetail-no-comments">
-              <p>No comments yet. Be the first to comment!</p>
-            </div>
-          ) : (
-            <div className="postdetail-comments-list">
-              {comments.map((comment) => (
-                <div key={comment._id} className="postdetail-comment-card">
-                  <div className="postdetail-comment-header">
-                    <div
-                      className="postdetail-comment-author"
-                      onClick={() => navigate(`/profile/${comment.owner._id}`)}
-                    >
-                      {comment.owner.profileImage ? (
-                        <img
-                          src={getImageUrl(comment.owner.profileImage)}
-                          alt={comment.owner.username}
-                          className="postdetail-comment-avatar"
-                        />
-                      ) : (
-                        <div className="postdetail-comment-avatar-placeholder">
-                          {comment.owner.username?.charAt(0).toUpperCase() || "?"}
-                        </div>
-                      )}
-                      <span className="postdetail-comment-author-name">
-                        {comment.owner.username}
-                      </span>
-                    </div>
-                    <span className="postdetail-comment-date">
-                      {new Date(comment.createdAt).toLocaleDateString()}
-                    </span>
+                {post.owner.profileImage ? (
+                  <img
+                    src={getImageUrl(post.owner.profileImage)}
+                    alt={post.owner.username}
+                    className="avatar-circle-sm"
+                  />
+                ) : (
+                  <div className="avatar-placeholder avatar-placeholder-sm">
+                    {post.owner.username?.charAt(0).toUpperCase() || "?"}
                   </div>
-
-                  {editingId === comment._id ? (
-                    <div className="postdetail-comment-edit">
-                      <input
-                        type="text"
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        className="postdetail-comment-edit-input"
-                      />
-                      <div className="postdetail-comment-edit-actions">
-                        <button
-                          className="postdetail-comment-save-btn"
-                          disabled={savingEdit || !editContent.trim()}
-                          onClick={() => handleSaveEdit(comment._id)}
-                        >
-                          {savingEdit ? "Saving..." : "Save"}
-                        </button>
-                        <button
-                          className="postdetail-comment-cancel-btn"
-                          onClick={cancelEdit}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <p className="postdetail-comment-content">
-                        {comment.content}
-                      </p>
-
-                      {user?._id === comment.owner._id && (
-                        <div className="postdetail-comment-actions">
-                          <button
-                            className="postdetail-comment-action edit"
-                            onClick={() => startEdit(comment)}
-                          >
-                            ✏️ Edit
-                          </button>
-                          {deletingId === comment._id ? (
-                            <div className="postdetail-comment-delete-confirm">
-                              <span>Delete?</span>
-                              <button
-                                className="postdetail-comment-action confirm-yes"
-                                onClick={() => handleDelete(comment._id)}
-                              >
-                                Yes
-                              </button>
-                              <button
-                                className="postdetail-comment-action confirm-no"
-                                onClick={() => setDeletingId(null)}
-                              >
-                                No
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              className="postdetail-comment-action delete"
-                              onClick={() => setDeletingId(comment._id)}
-                            >
-                              🗑️ Delete
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </>
-                  )}
+                )}
+                <div>
+                  <span className="fw-semibold small d-block">{post.owner.username}</span>
+                  <small className="text-muted" style={{ fontSize: "0.7rem" }}>
+                    {new Date(post.createdAt).toLocaleDateString(undefined, {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </small>
                 </div>
-              ))}
-
-              {/* Sentinel for infinite scroll */}
-              <div ref={sentinelRef} className="postdetail-sentinel">
-                {loadingComments && (
-                  <p className="postdetail-loading-more">Loading more...</p>
-                )}
-                {!loadingComments && page >= totalPages && comments.length > 0 && (
-                  <p className="postdetail-end">All comments loaded</p>
-                )}
               </div>
             </div>
-          )}
+
+            {post.image && (
+              <img
+                src={getImageUrl(post.image)}
+                alt={post.dishName}
+                className="card-img-top"
+                style={{ maxHeight: 450, objectFit: "cover" }}
+              />
+            )}
+
+            <div className="card-body">
+              <h5 className="card-title fw-bold mb-1">{post.dishName}</h5>
+              <p className="text-primary small fw-semibold mb-2">
+                <i className="bi bi-geo-alt-fill me-1"></i>{post.restaurant}
+              </p>
+              <p className="card-text text-muted">{post.description}</p>
+            </div>
+          </div>
+
+          {/* Comments Section */}
+          <div className="card border-0 shadow-sm animate-fade-in" style={{ animationDelay: "0.1s" }}>
+            <div className="card-header bg-white px-3">
+              <h6 className="mb-0 fw-bold d-flex align-items-center gap-2">
+                <i className="bi bi-chat-dots text-primary"></i>
+                Comments ({post.commentCount || 0})
+              </h6>
+            </div>
+
+            <div className="card-body px-3">
+              {/* New Comment Form */}
+              <form onSubmit={handleSubmitComment} className="mb-4">
+                <div className="d-flex gap-2">
+                  {user?.profileImage ? (
+                    <img
+                      src={getImageUrl(user.profileImage)}
+                      alt={user.username}
+                      className="avatar-circle-sm flex-shrink-0 mt-1"
+                    />
+                  ) : (
+                    <div className="avatar-placeholder avatar-placeholder-sm flex-shrink-0 mt-1">
+                      {user?.username?.charAt(0).toUpperCase() || "?"}
+                    </div>
+                  )}
+                  <div className="flex-grow-1">
+                    <div className="input-group">
+                      <input
+                        type="text"
+                        placeholder="Write a comment..."
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        className="form-control"
+                      />
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={submitting || !newComment.trim()}
+                      >
+                        {submitting ? (
+                          <span className="spinner-border spinner-border-sm"></span>
+                        ) : (
+                          <i className="bi bi-send"></i>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+
+              {error && (
+                <div className="alert alert-danger py-2 small d-flex align-items-center gap-2">
+                  <i className="bi bi-exclamation-triangle"></i>
+                  {error}
+                </div>
+              )}
+
+              {/* Comments List */}
+              {initialLoad ? (
+                <div className="text-center py-3">
+                  <div className="spinner-border spinner-border-sm text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              ) : comments.length === 0 ? (
+                <div className="text-center py-4">
+                  <i className="bi bi-chat text-muted" style={{ fontSize: "2rem", opacity: 0.3 }}></i>
+                  <p className="text-muted small mt-2 mb-0">No comments yet. Start the conversation!</p>
+                </div>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  {comments.map((comment) => {
+                    const isOwn = user?._id === comment.owner._id;
+                    return (
+                      <div key={comment._id} className="d-flex gap-2 animate-fade-in">
+                        <div
+                          className="flex-shrink-0 cursor-pointer"
+                          onClick={() => navigate(`/profile/${comment.owner._id}`)}
+                        >
+                          {comment.owner.profileImage ? (
+                            <img
+                              src={getImageUrl(comment.owner.profileImage)}
+                              alt={comment.owner.username}
+                              className="avatar-circle-sm"
+                            />
+                          ) : (
+                            <div className="avatar-placeholder avatar-placeholder-sm">
+                              {comment.owner.username?.charAt(0).toUpperCase() || "?"}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-grow-1">
+                          <div className={`comment-bubble ${isOwn ? "own-comment" : ""}`}>
+                            <div className="d-flex justify-content-between align-items-center mb-1">
+                              <span
+                                className="fw-semibold small cursor-pointer"
+                                onClick={() => navigate(`/profile/${comment.owner._id}`)}
+                              >
+                                {comment.owner.username}
+                              </span>
+                              <small className="text-muted" style={{ fontSize: "0.7rem" }}>
+                                {new Date(comment.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                              </small>
+                            </div>
+
+                            {editingId === comment._id ? (
+                              <div className="animate-fade-in">
+                                <input
+                                  type="text"
+                                  value={editContent}
+                                  onChange={(e) => setEditContent(e.target.value)}
+                                  className="form-control form-control-sm mb-2"
+                                  autoFocus
+                                />
+                                <div className="d-flex gap-2">
+                                  <button
+                                    className="btn btn-primary btn-sm py-0 px-2"
+                                    disabled={savingEdit || !editContent.trim()}
+                                    onClick={() => handleSaveEdit(comment._id)}
+                                  >
+                                    {savingEdit ? (
+                                      <span className="spinner-border spinner-border-sm"></span>
+                                    ) : (
+                                      <><i className="bi bi-check-lg me-1"></i>Save</>
+                                    )}
+                                  </button>
+                                  <button
+                                    className="btn btn-light btn-sm py-0 px-2"
+                                    onClick={cancelEdit}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="mb-0 small">{comment.content}</p>
+                            )}
+                          </div>
+
+                          {/* Action buttons below bubble */}
+                          {isOwn && editingId !== comment._id && (
+                            <div className="d-flex gap-3 mt-1 ms-2">
+                              <button
+                                className="btn btn-link btn-sm text-muted text-decoration-none p-0"
+                                style={{ fontSize: "0.75rem" }}
+                                onClick={() => startEdit(comment)}
+                              >
+                                <i className="bi bi-pencil me-1"></i>Edit
+                              </button>
+                              {deletingId === comment._id ? (
+                                <div className="d-flex align-items-center gap-2 animate-fade-in">
+                                  <span className="text-danger" style={{ fontSize: "0.75rem" }}>Delete?</span>
+                                  <button
+                                    className="btn btn-danger btn-sm py-0 px-2"
+                                    style={{ fontSize: "0.75rem" }}
+                                    onClick={() => handleDelete(comment._id)}
+                                  >
+                                    Yes
+                                  </button>
+                                  <button
+                                    className="btn btn-light btn-sm py-0 px-2"
+                                    style={{ fontSize: "0.75rem" }}
+                                    onClick={() => setDeletingId(null)}
+                                  >
+                                    No
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  className="btn btn-link btn-sm text-danger text-decoration-none p-0"
+                                  style={{ fontSize: "0.75rem" }}
+                                  onClick={() => setDeletingId(comment._id)}
+                                >
+                                  <i className="bi bi-trash me-1"></i>Delete
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Sentinel for infinite scroll */}
+                  <div ref={sentinelRef} className="text-center py-2">
+                    {loadingComments && (
+                      <div className="spinner-border spinner-border-sm text-primary" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                    )}
+                    {!loadingComments && page >= totalPages && comments.length > 0 && (
+                      <small className="text-muted">All comments loaded</small>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </main>
     </div>

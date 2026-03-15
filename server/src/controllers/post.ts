@@ -11,8 +11,8 @@ export const createPost = async (
   try {
     const { dishName, restaurant, description } = req.body;
 
-    if (!dishName || !restaurant || !description) {
-      res.status(400).json({ message: "Dish name, restaurant, and description are required." });
+    if (!dishName || !restaurant) {
+      res.status(400).json({ message: "Dish name and restaurant are required." });
       return;
     }
 
