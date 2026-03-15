@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth";
 import postRoutes from "./routes/post";
 import userRoutes from "./routes/user";
 import commentRoutes from "./routes/comment";
+import { setupSwagger } from "./swagger";
 
 dotenv.config();
 
@@ -17,6 +18,9 @@ app.use(express.json());
 
 // Serve uploaded images as static files
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+// Swagger API documentation
+setupSwagger(app);
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -44,6 +48,9 @@ const startServer = async () => {
   });
 };
 
-startServer();
+// Only start the server when this file is run directly (not imported by tests)
+if (process.env.NODE_ENV !== "test") {
+  startServer();
+}
 
 export default app;
