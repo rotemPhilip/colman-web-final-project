@@ -210,23 +210,22 @@ export const refreshToken = async (
 
     const user = await User.findById(decoded.userId);
     if (!user || !user.refreshTokens.includes(token)) {
-      // possible token theft — clear all refresh tokens
+      // possible token theft — clear all refresh tokens atomically
       if (user) {
-        user.refreshTokens = [];
-        await user.save();
+        await User.findByIdAndUpdate(user._id, { $set: { refreshTokens: [] } });
       }
       res.status(403).json({ message: "Invalid refresh token." });
       return;
     }
 
-    // Remove old token and issue new pair
-    user.refreshTokens = user.refreshTokens.filter((t) => t !== token);
-
     const newAccessToken = generateAccessToken(user._id.toString());
     const newRefreshToken = generateRefreshToken(user._id.toString());
 
-    user.refreshTokens.push(newRefreshToken);
-    await user.save();
+    // Atomic swap: remove old token, add new one — no version conflict
+    await User.findByIdAndUpdate(user._id, {
+      $pull: { refreshTokens: token },
+      $push: { refreshTokens: newRefreshToken },
+    });
 
     res.json({
       accessToken: newAccessToken,

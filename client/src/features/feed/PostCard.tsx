@@ -102,7 +102,7 @@ const PostCard = ({ post, isOwn, onSave, onDelete, onToggleLike, animationDelay 
               src={getImageUrl(post.image)}
               alt={post.dishName}
               className="w-100 object-fit-cover cursor-pointer"
-              style={{ aspectRatio: "16/9", display: "block" }}
+              style={{ maxHeight: 520, width: "100%", objectFit: "contain", background: "#f8f8f8", display: "block" }}
               onClick={() => navigate(`/post/${post._id}`)}
             />
           )}
