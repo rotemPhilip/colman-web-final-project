@@ -19,6 +19,7 @@ interface ProfilePostsProps {
   onCancelNewPost: () => void;
   onEditPostSave: (postId: string, data: PostFormData) => Promise<void>;
   onDeletePost: (postId: string) => Promise<void>;
+  onToggleLike: (postId: string) => Promise<{ likesCount: number; isLikedByCurrentUser: boolean }>;
 }
 
 const ProfilePosts = ({
@@ -35,6 +36,7 @@ const ProfilePosts = ({
   onCancelNewPost,
   onEditPostSave,
   onDeletePost,
+  onToggleLike,
 }: ProfilePostsProps) => {
   return (
     <div className="mt-4 pb-5">
@@ -103,6 +105,7 @@ const ProfilePosts = ({
                 isOwn={isOwnProfile}
                 onSave={(data) => onEditPostSave(post._id, data)}
                 onDelete={() => onDeletePost(post._id)}
+                onToggleLike={() => onToggleLike(post._id)}
                 animationDelay={`${index * 0.05}s`}
               />
             ))}

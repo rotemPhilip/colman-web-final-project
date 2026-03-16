@@ -13,15 +13,33 @@ interface PostCardProps {
   isOwn: boolean;
   onSave: (data: PostFormData) => Promise<void>;
   onDelete: () => Promise<void>;
+  onToggleLike: () => Promise<{ likesCount: number; isLikedByCurrentUser: boolean }>;
   animationDelay?: string;
 }
 
-const PostCard = ({ post, isOwn, onSave, onDelete, animationDelay }: PostCardProps) => {
+const PostCard = ({ post, isOwn, onSave, onDelete, onToggleLike, animationDelay }: PostCardProps) => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState(post.commentCount || 0);
+  const [likesCount, setLikesCount] = useState(post.likesCount || 0);
+  const [isLiked, setIsLiked] = useState(post.isLikedByCurrentUser || false);
+
+  const handleToggleLike = async () => {
+    // Optimistic update
+    setIsLiked((prev) => !prev);
+    setLikesCount((prev) => prev + (isLiked ? -1 : 1));
+    try {
+      const result = await onToggleLike();
+      setLikesCount(result.likesCount);
+      setIsLiked(result.isLikedByCurrentUser);
+    } catch {
+      // Revert on failure
+      setIsLiked((prev) => !prev);
+      setLikesCount((prev) => prev + (isLiked ? 1 : -1));
+    }
+  };
 
   const handleEditSave = async (data: PostFormData) => {
     await onSave(data);
@@ -117,13 +135,22 @@ const PostCard = ({ post, isOwn, onSave, onDelete, animationDelay }: PostCardPro
             <p className="card-text text-muted small mb-0">{post.description}</p>
           </div>
           <div className="card-footer bg-white border-top py-2 px-4 d-flex justify-content-between align-items-center">
-            <button
-              className={`btn btn-link text-decoration-none btn-sm p-0 d-flex align-items-center gap-1 ${showComments ? "text-primary fw-semibold" : "text-muted"}`}
-              onClick={() => setShowComments((v) => !v)}
-            >
-              <i className={`bi ${showComments ? "bi-chat-dots-fill" : "bi-chat-dots"}`}></i>
-              <span>{commentCount} Comments</span>
-            </button>
+            <div className="d-flex align-items-center gap-3">
+              <button
+                className={`btn btn-link text-decoration-none btn-sm p-0 d-flex align-items-center gap-1 ${isLiked ? "text-danger" : "text-muted"}`}
+                onClick={handleToggleLike}
+              >
+                <i className={`bi ${isLiked ? "bi-heart-fill" : "bi-heart"}`}></i>
+                <span>{likesCount}</span>
+              </button>
+              <button
+                className={`btn btn-link text-decoration-none btn-sm p-0 d-flex align-items-center gap-1 ${showComments ? "text-primary fw-semibold" : "text-muted"}`}
+                onClick={() => setShowComments((v) => !v)}
+              >
+                <i className={`bi ${showComments ? "bi-chat-dots-fill" : "bi-chat-dots"}`}></i>
+                <span>{commentCount}</span>
+              </button>
+            </div>
             <small className="text-muted">
               <i className="bi bi-clock me-1"></i>
               {new Date(post.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
