@@ -54,21 +54,21 @@ const AppNavbar = ({
               className={`biteshare-chip ${filter === "all" ? "biteshare-chip-active" : "biteshare-chip-inactive"}`}
               onClick={() => onFilterChange("all")}
             >
-              All Posts
+              <i className="bi bi-globe me-1"></i>All Posts
             </button>
             <button
               className={`biteshare-chip ${filter === "mine" ? "biteshare-chip-active" : "biteshare-chip-inactive"}`}
               onClick={() => onFilterChange("mine")}
             >
-              My Posts
+              <i className="bi bi-person me-1"></i>My Posts
             </button>
           </div>
         )}
 
-        {/* Right: avatar + username + logout */}
-        <div className="d-flex align-items-center gap-2">
-          <div
-            className="d-flex align-items-center gap-2 cursor-pointer"
+        {/* Right: profile area + divider + logout */}
+        <div className="d-flex align-items-center">
+          <button
+            className="btn btn-sm border-0 d-flex align-items-center gap-2 fw-semibold text-dark px-2"
             onClick={() => navigate(`/profile/${user?._id}`)}
             title="My Profile"
           >
@@ -77,16 +77,20 @@ const AppNavbar = ({
               profileImage={user?.profileImage}
               size="sm"
             />
-            <span className="fw-semibold small">{user?.username}</span>
-          </div>
+            <span className="small">{user?.username}</span>
+          </button>
+
           {showLogout && (
-            <button
-              onClick={handleLogout}
-              className="btn btn-sm border-0 text-secondary p-1"
-              title="Logout"
-            >
-              <i className="bi bi-box-arrow-right fs-5"></i>
-            </button>
+            <>
+              <div className="vr mx-2 opacity-25"></div>
+              <button
+                className="btn btn-sm border-0 text-secondary px-2"
+                onClick={handleLogout}
+                title="Logout"
+              >
+                <i className="bi bi-box-arrow-right"></i>
+              </button>
+            </>
           )}
         </div>
       </div>

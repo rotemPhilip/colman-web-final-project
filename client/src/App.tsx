@@ -20,22 +20,19 @@ function App() {
 
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={user ? <Navigate to="/" /> : <Login />}
-      />
-      <Route
-        path="/register"
-        element={user ? <Navigate to="/" /> : <Register />}
-      />
-      <Route
-        path="/"
-        element={user ? <Home /> : <Navigate to="/login" />}
-      />
-      <Route
-        path="/profile/:id"
-        element={user ? <Profile /> : <Navigate to="/login" />}
-      />
+      {user ? (
+        <>
+          <Route path="/" element={<Home />} />
+          <Route path="/profile/:id" element={<Profile />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </>
+      ) : (
+        <>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="*" element={<Navigate to="/login" />} />
+        </>
+      )}
     </Routes>
   );
 }

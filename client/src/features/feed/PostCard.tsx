@@ -54,21 +54,22 @@ const PostCard = ({ post, isOwn, onSave, onDelete, animationDelay }: PostCardPro
           </div>
         </div>
         {isOwn && !isEditing && (
-          <div className="d-flex gap-1">
-            <button
-              className="btn btn-sm btn-outline-primary border-0 p-1"
-              onClick={() => setIsEditing(true)}
-              title="Edit post"
-            >
-              <i className="bi bi-pencil"></i>
+          <div className="dropdown">
+            <button className="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+              <i className="bi bi-three-dots"></i>
             </button>
-            <button
-              className="btn btn-sm btn-outline-danger border-0 p-1"
-              onClick={() => setIsDeleting(true)}
-              title="Delete post"
-            >
-              <i className="bi bi-trash"></i>
-            </button>
+            <ul className="dropdown-menu dropdown-menu-end">
+              <li>
+                <button className="dropdown-item" onClick={() => setIsEditing(true)}>
+                  <i className="bi bi-pencil me-2"></i>Edit
+                </button>
+              </li>
+              <li>
+                <button className="dropdown-item text-danger" onClick={() => setIsDeleting(true)}>
+                  <i className="bi bi-trash me-2"></i>Delete
+                </button>
+              </li>
+            </ul>
           </div>
         )}
       </div>

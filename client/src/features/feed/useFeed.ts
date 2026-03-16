@@ -37,15 +37,13 @@ export const useFeed = () => {
       setLoadingFeed(true);
       setError("");
       try {
-        const result =
-          filter === "mine" && user
-            ? await getPostsByUser(user._id, pageNum, PAGE_SIZE)
-            : await getAllPosts(pageNum, PAGE_SIZE);
-        if (append) {
-          setPosts((prev) => [...prev, ...result.posts]);
-        } else {
-          setPosts(result.posts);
-        }
+        const isMineFilter = filter === "mine" && user;
+
+        const result = isMineFilter
+          ? await getPostsByUser(user._id, pageNum, PAGE_SIZE)
+          : await getAllPosts(pageNum, PAGE_SIZE);
+
+        setPosts((prev) => append ? [...prev, ...result.posts] : result.posts);
         setTotalPages(result.pages);
         setPage(pageNum);
       } catch {
@@ -67,10 +65,9 @@ export const useFeed = () => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !loadingFeed && page < totalPages) {
+      ([entry]) => {
+        if (entry.isIntersecting && !loadingFeed && page < totalPages)
           fetchPosts(page + 1, true);
-        }
       },
       { rootMargin: "200px" }
     );
@@ -78,14 +75,18 @@ export const useFeed = () => {
     return () => observer.disconnect();
   }, [page, totalPages, loadingFeed, fetchPosts]);
 
-  const handleCreate = async (data: PostFormData) => {
+  const toFormData = (data: PostFormData) => {
     const fd = new FormData();
     fd.append("dishName", data.dishName.trim());
     fd.append("restaurant", data.restaurant.trim());
     fd.append("description", data.description.trim());
     if (data.image) fd.append("image", data.image);
+    return fd;
+  };
+
+  const handleCreate = async (data: PostFormData) => {
     try {
-      const post = await createPost(fd);
+      const post = await createPost(toFormData(data));
       setPosts((prev) => [post, ...prev]);
       setShowCreate(false);
       showToast("Post shared successfully!");
@@ -96,13 +97,8 @@ export const useFeed = () => {
   };
 
   const handleEditSave = async (postId: string, data: PostFormData) => {
-    const fd = new FormData();
-    fd.append("dishName", data.dishName.trim());
-    fd.append("restaurant", data.restaurant.trim());
-    fd.append("description", data.description.trim());
-    if (data.image) fd.append("image", data.image);
     try {
-      const updated = await updatePost(postId, fd);
+      const updated = await updatePost(postId, toFormData(data));
       setPosts((prev) => prev.map((p) => (p._id === postId ? updated : p)));
     } catch {
       showToast("Failed to update post.", "error");
