@@ -4,6 +4,30 @@ import Post from "../models/post";
 import Comment from "../models/comment";
 import { AuthRequest } from "../middleware/auth";
 
+// Shared helper: attach commentCount, likesCount, isLikedByCurrentUser to posts
+const attachPostMeta = async (
+  posts: InstanceType<typeof Post>[],
+  currentUserId?: string
+) => {
+  const postIds = posts.map((p) => p._id);
+  const commentCounts = await Comment.aggregate([
+    { $match: { post: { $in: postIds } } },
+    { $group: { _id: "$post", count: { $sum: 1 } } },
+  ]);
+  const countMap = new Map(commentCounts.map((c) => [c._id.toString(), c.count]));
+  return posts.map((p) => {
+    const obj = p.toObject() as any;
+    return {
+      ...obj,
+      commentCount: countMap.get(p._id.toString()) || 0,
+      likesCount: obj.likes.length,
+      isLikedByCurrentUser: obj.likes
+        .map((id: mongoose.Types.ObjectId) => id.toString())
+        .includes(currentUserId),
+    };
+  });
+};
+
 // Create a post
 export const createPost = async (
   req: AuthRequest,
@@ -76,22 +100,7 @@ export const getPostsByUser = async (
       Post.countDocuments({ owner: userId }),
     ]);
 
-    // Attach comment counts
-    const postIds = posts.map((p) => p._id);
-    const commentCounts = await Comment.aggregate([
-      { $match: { post: { $in: postIds } } },
-      { $group: { _id: "$post", count: { $sum: 1 } } },
-    ]);
-    const countMap = new Map(commentCounts.map((c) => [c._id.toString(), c.count]));
-    const postsWithMeta = posts.map((p) => {
-      const obj = p.toObject() as any;
-      return {
-        ...obj,
-        commentCount: countMap.get(p._id.toString()) || 0,
-        likesCount: obj.likes.length,
-        isLikedByCurrentUser: obj.likes.map((id: mongoose.Types.ObjectId) => id.toString()).includes(req.userId),
-      };
-    });
+    const postsWithMeta = await attachPostMeta(posts, req.userId);
 
     res.json({ posts: postsWithMeta, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
@@ -119,22 +128,7 @@ export const getAllPosts = async (
       Post.countDocuments(),
     ]);
 
-    // Attach comment counts
-    const postIds = posts.map((p) => p._id);
-    const commentCounts = await Comment.aggregate([
-      { $match: { post: { $in: postIds } } },
-      { $group: { _id: "$post", count: { $sum: 1 } } },
-    ]);
-    const countMap = new Map(commentCounts.map((c) => [c._id.toString(), c.count]));
-    const postsWithMeta = posts.map((p) => {
-      const obj = p.toObject() as any;
-      return {
-        ...obj,
-        commentCount: countMap.get(p._id.toString()) || 0,
-        likesCount: obj.likes.length,
-        isLikedByCurrentUser: obj.likes.map((id: mongoose.Types.ObjectId) => id.toString()).includes(req.userId),
-      };
-    });
+    const postsWithMeta = await attachPostMeta(posts, req.userId);
 
     res.json({ posts: postsWithMeta, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
@@ -163,9 +157,9 @@ export const updatePost = async (
       return;
     }
 
-    if (dishName) post.dishName = dishName;
-    if (restaurant) post.restaurant = restaurant;
-    if (description) post.description = description;
+    if (dishName !== undefined) post.dishName = dishName;
+    if (restaurant !== undefined) post.restaurant = restaurant;
+    if (description !== undefined) post.description = description;
     if (req.file) post.image = `/uploads/${req.file.filename}`;
 
     await post.save();

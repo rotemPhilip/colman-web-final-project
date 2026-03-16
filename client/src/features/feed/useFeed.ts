@@ -33,8 +33,14 @@ export const useFeed = () => {
   const { toast, showToast } = useToast();
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  // Refs to prevent race conditions between filter changes and IntersectionObserver
+  const loadingRef = useRef(false);
+  const fetchIdRef = useRef(0);
+
   const fetchPosts = useCallback(
     async (pageNum: number, append: boolean) => {
+      const fetchId = ++fetchIdRef.current;
+      loadingRef.current = true;
       setLoadingFeed(true);
       setError("");
       try {
@@ -44,14 +50,21 @@ export const useFeed = () => {
           ? await getPostsByUser(user._id, pageNum, PAGE_SIZE)
           : await getAllPosts(pageNum, PAGE_SIZE);
 
+        // Discard stale responses from previous filter/fetch
+        if (fetchIdRef.current !== fetchId) return;
+
         setPosts((prev) => append ? [...prev, ...result.posts] : result.posts);
         setTotalPages(result.pages);
         setPage(pageNum);
       } catch {
+        if (fetchIdRef.current !== fetchId) return;
         setError("Failed to load posts.");
       } finally {
-        setLoadingFeed(false);
-        setInitialLoad(false);
+        if (fetchIdRef.current === fetchId) {
+          loadingRef.current = false;
+          setLoadingFeed(false);
+          setInitialLoad(false);
+        }
       }
     },
     [filter, user]
@@ -67,7 +80,7 @@ export const useFeed = () => {
     if (!sentinel) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !loadingFeed && page < totalPages)
+        if (entry.isIntersecting && !loadingRef.current && page < totalPages)
           fetchPosts(page + 1, true);
       },
       { rootMargin: "200px" }
