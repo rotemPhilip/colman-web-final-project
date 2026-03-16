@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Avatar from "../../components/Avatar/Avatar";
 import DeleteConfirm from "../../components/DeleteConfirm/DeleteConfirm";
 import PostForm from "../../components/PostForm/PostForm";
-import PostComments from "./PostComments";
 import { getImageUrl } from "../../utils/image";
 import type { Post } from "../../services/post.service";
 import type { PostFormData } from "./useFeed";
@@ -20,8 +19,6 @@ const PostCard = ({ post, isOwn, onSave, onDelete, animationDelay }: PostCardPro
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showComments, setShowComments] = useState(false);
-  const [commentCount, setCommentCount] = useState(post.commentCount || 0);
 
   const handleEditSave = async (data: PostFormData) => {
     await onSave(data);
@@ -103,12 +100,17 @@ const PostCard = ({ post, isOwn, onSave, onDelete, animationDelay }: PostCardPro
             <img
               src={getImageUrl(post.image)}
               alt={post.dishName}
-              className="w-100 object-fit-cover"
+              className="w-100 object-fit-cover cursor-pointer"
               style={{ aspectRatio: "16/9", display: "block" }}
+              onClick={() => navigate(`/post/${post._id}`)}
             />
           )}
           <div className="card-body px-4 pt-3 pb-2">
-            <h5 className="fw-bold mb-2" style={{ fontSize: "1.1rem" }}>{post.dishName}</h5>
+            <h5
+              className="fw-bold mb-2 cursor-pointer"
+              style={{ fontSize: "1.1rem" }}
+              onClick={() => navigate(`/post/${post._id}`)}
+            >{post.dishName}</h5>
             <p className="mb-2">
               <span className="badge rounded-pill bg-secondary bg-opacity-10 text-primary fw-semibold px-3 py-2">
                 <i className="bi bi-geo-alt-fill me-1"></i>{post.restaurant}
@@ -118,23 +120,17 @@ const PostCard = ({ post, isOwn, onSave, onDelete, animationDelay }: PostCardPro
           </div>
           <div className="card-footer bg-white border-top py-2 px-4 d-flex justify-content-between align-items-center">
             <button
-              className={`btn btn-link text-decoration-none btn-sm p-0 d-flex align-items-center gap-1 ${showComments ? "text-primary fw-semibold" : "text-muted"}`}
-              onClick={() => setShowComments((v) => !v)}
+              className="btn btn-link text-decoration-none btn-sm p-0 d-flex align-items-center gap-1 text-muted"
+              onClick={() => navigate(`/post/${post._id}`)}
             >
-              <i className={`bi ${showComments ? "bi-chat-dots-fill" : "bi-chat-dots"}`}></i>
-              <span>{commentCount} Comments</span>
+              <i className="bi bi-chat-dots"></i>
+              <span>{post.commentCount} Comments</span>
             </button>
             <small className="text-muted">
               <i className="bi bi-clock me-1"></i>
               {new Date(post.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
             </small>
           </div>
-
-          <PostComments
-            postId={post._id}
-            open={showComments}
-            onCountChange={(delta) => setCommentCount((c) => c + delta)}
-          />
         </>
       )}
     </div>

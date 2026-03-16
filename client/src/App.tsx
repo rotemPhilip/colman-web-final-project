@@ -4,6 +4,7 @@ import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import Home from "./pages/Home/Home";
 import Profile from "./pages/Profile/Profile";
+import PostDetail from "./pages/PostDetail/PostDetail";
 
 function App() {
   const { user, loading } = useAuth();
@@ -23,6 +24,7 @@ function App() {
       {user ? (
         <>
           <Route path="/" element={<Home />} />
+          <Route path="/post/:postId" element={<PostDetail />} />
           <Route path="/profile/:id" element={<Profile />} />
           <Route path="*" element={<Navigate to="/" />} />
         </>

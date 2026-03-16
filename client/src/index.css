@@ -350,41 +350,6 @@ a:hover {
   margin-bottom: 1rem;
 }
 
-/* Profile banner */
-.profile-banner {
-  height: 140px;
-  background: linear-gradient(135deg, #ff6b35 0%, #ff8c5a 50%, #f7c59f 100%);
-  border-radius: 16px 16px 0 0;
-  position: relative;
-}
-
-.profile-avatar-wrapper {
-  position: relative;
-  margin-top: -55px;
-}
-
-/* Image upload area */
-.image-upload-area {
-  border: 2px dashed #dee2e6;
-  border-radius: 12px;
-  padding: 1.5rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: #fafbfc;
-}
-
-.image-upload-area:hover {
-  border-color: #ff6b35;
-  background: var(--bite-orange-light);
-}
-
-.image-upload-area.has-image {
-  border-style: solid;
-  border-color: #ff6b35;
-  padding: 0.5rem;
-}
-
 /* Delete confirm overlay */
 .delete-confirm-overlay {
   background: rgba(255, 255, 255, 0.95);
@@ -424,18 +389,6 @@ a:hover {
   padding: 0 6px;
 }
 
-/* Avatar edit hover overlay */
-.avatar-edit-wrapper .avatar-remove-overlay {
-  background: rgba(220, 53, 69, 0.7);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  cursor: pointer;
-}
-
-.avatar-edit-wrapper:hover .avatar-remove-overlay {
-  opacity: 1;
-}
-
 /* Responsive tweaks */
 @media (max-width: 576px) {
   .fab {
@@ -455,14 +408,6 @@ a:hover {
     width: 80px;
     height: 80px;
     font-size: 1.8rem;
-  }
-
-  .profile-banner {
-    height: 100px;
-  }
-
-  .profile-avatar-wrapper {
-    margin-top: -40px;
   }
 }
 
