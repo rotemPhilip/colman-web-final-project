@@ -1,10 +1,9 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/useAuth";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Home from "./pages/Home";
-import Profile from "./pages/Profile";
-import PostDetail from "./pages/PostDetail";
+import Login from "./pages/Login/Login";
+import Register from "./pages/Register/Register";
+import Home from "./pages/Home/Home";
+import Profile from "./pages/Profile/Profile";
 
 function App() {
   const { user, loading } = useAuth();
@@ -36,10 +35,6 @@ function App() {
       <Route
         path="/profile/:id"
         element={user ? <Profile /> : <Navigate to="/login" />}
-      />
-      <Route
-        path="/post/:postId"
-        element={user ? <PostDetail /> : <Navigate to="/login" />}
       />
     </Routes>
   );
