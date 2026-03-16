@@ -26,6 +26,7 @@ const Home = () => {
     handleCreate,
     handleEditSave,
     handleDelete,
+    handleToggleLike,
   } = useFeed();
 
   return (
@@ -95,6 +96,7 @@ const Home = () => {
                   isOwn={user?._id === post.owner._id}
                   onSave={(data) => handleEditSave(post._id, data)}
                   onDelete={() => handleDelete(post._id)}
+                  onToggleLike={() => handleToggleLike(post._id)}
                   animationDelay={`${index * 0.05}s`}
                 />
               ))}

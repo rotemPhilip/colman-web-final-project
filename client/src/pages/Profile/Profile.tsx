@@ -36,6 +36,7 @@ const Profile = () => {
     handleCreatePost,
     handleEditPostSave,
     handleDeletePost,
+    handleToggleLike,
   } = useProfile();
 
   if (loading) return <LoadingSpinner message="Loading profile..." />;
@@ -97,6 +98,7 @@ const Profile = () => {
           onCancelNewPost={() => setShowNewPost(false)}
           onEditPostSave={handleEditPostSave}
           onDeletePost={handleDeletePost}
+          onToggleLike={handleToggleLike}
         />
       </main>
     </div>
