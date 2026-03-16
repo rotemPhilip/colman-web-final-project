@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Avatar from "../../components/Avatar/Avatar";
 import DeleteConfirm from "../../components/DeleteConfirm/DeleteConfirm";
 import PostForm from "../../components/PostForm/PostForm";
-import PostComments from "./PostComments";
 import { getImageUrl } from "../../utils/image";
 import type { Post } from "../../services/post.service";
 import type { PostFormData } from "./useFeed";
@@ -21,25 +20,6 @@ const PostCard = ({ post, isOwn, onSave, onDelete, onToggleLike, animationDelay 
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showComments, setShowComments] = useState(false);
-  const [commentCount, setCommentCount] = useState(post.commentCount || 0);
-  const [likesCount, setLikesCount] = useState(post.likesCount || 0);
-  const [isLiked, setIsLiked] = useState(post.isLikedByCurrentUser || false);
-
-  const handleToggleLike = async () => {
-    // Optimistic update
-    setIsLiked((prev) => !prev);
-    setLikesCount((prev) => prev + (isLiked ? -1 : 1));
-    try {
-      const result = await onToggleLike();
-      setLikesCount(result.likesCount);
-      setIsLiked(result.isLikedByCurrentUser);
-    } catch {
-      // Revert on failure
-      setIsLiked((prev) => !prev);
-      setLikesCount((prev) => prev + (isLiked ? 1 : -1));
-    }
-  };
 
   const handleEditSave = async (data: PostFormData) => {
     await onSave(data);
@@ -121,12 +101,17 @@ const PostCard = ({ post, isOwn, onSave, onDelete, onToggleLike, animationDelay 
             <img
               src={getImageUrl(post.image)}
               alt={post.dishName}
-              className="w-100 object-fit-cover"
-              style={{ aspectRatio: "16/9", display: "block" }}
+              className="w-100 object-fit-cover cursor-pointer"
+              style={{ maxHeight: 520, width: "100%", objectFit: "contain", background: "#f8f8f8", display: "block" }}
+              onClick={() => navigate(`/post/${post._id}`)}
             />
           )}
           <div className="card-body px-4 pt-3 pb-2">
-            <h5 className="fw-bold mb-2" style={{ fontSize: "1.1rem" }}>{post.dishName}</h5>
+            <h5
+              className="fw-bold mb-2 cursor-pointer"
+              style={{ fontSize: "1.1rem" }}
+              onClick={() => navigate(`/post/${post._id}`)}
+            >{post.dishName}</h5>
             <p className="mb-2">
               <span className="badge rounded-pill bg-secondary bg-opacity-10 text-primary fw-semibold px-3 py-2">
                 <i className="bi bi-geo-alt-fill me-1"></i>{post.restaurant}
@@ -135,33 +120,18 @@ const PostCard = ({ post, isOwn, onSave, onDelete, onToggleLike, animationDelay 
             <p className="card-text text-muted small mb-0">{post.description}</p>
           </div>
           <div className="card-footer bg-white border-top py-2 px-4 d-flex justify-content-between align-items-center">
-            <div className="d-flex align-items-center gap-3">
-              <button
-                className={`btn btn-link text-decoration-none btn-sm p-0 d-flex align-items-center gap-1 ${isLiked ? "text-danger" : "text-muted"}`}
-                onClick={handleToggleLike}
-              >
-                <i className={`bi ${isLiked ? "bi-heart-fill" : "bi-heart"}`}></i>
-                <span>{likesCount}</span>
-              </button>
-              <button
-                className={`btn btn-link text-decoration-none btn-sm p-0 d-flex align-items-center gap-1 ${showComments ? "text-primary fw-semibold" : "text-muted"}`}
-                onClick={() => setShowComments((v) => !v)}
-              >
-                <i className={`bi ${showComments ? "bi-chat-dots-fill" : "bi-chat-dots"}`}></i>
-                <span>{commentCount}</span>
-              </button>
-            </div>
+            <button
+              className="btn btn-link text-decoration-none btn-sm p-0 d-flex align-items-center gap-1 text-muted"
+              onClick={() => navigate(`/post/${post._id}`)}
+            >
+              <i className="bi bi-chat-dots"></i>
+              <span>{post.commentCount} Comments</span>
+            </button>
             <small className="text-muted">
               <i className="bi bi-clock me-1"></i>
               {new Date(post.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
             </small>
           </div>
-
-          <PostComments
-            postId={post._id}
-            open={showComments}
-            onCountChange={(delta) => setCommentCount((c) => c + delta)}
-          />
         </>
       )}
     </div>
