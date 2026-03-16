@@ -6,6 +6,7 @@ import {
   createPost,
   updatePost,
   deletePost,
+  toggleLike,
   type Post,
 } from "../../services/post.service";
 import { useToast } from "../../hooks/useToast";
@@ -116,6 +117,10 @@ export const useFeed = () => {
     }
   };
 
+  const handleToggleLike = async (postId: string) => {
+    return toggleLike(postId);
+  };
+
   return {
     user,
     posts,
@@ -134,5 +139,6 @@ export const useFeed = () => {
     handleCreate,
     handleEditSave,
     handleDelete,
+    handleToggleLike,
   };
 };

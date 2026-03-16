@@ -12,6 +12,8 @@ export interface Post {
     profileImage: string;
   };
   commentCount: number;
+  likesCount: number;
+  isLikedByCurrentUser: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -68,4 +70,9 @@ export const updatePost = async (
 
 export const deletePost = async (id: string): Promise<void> => {
   await api.delete(`/api/posts/${id}`);
+};
+
+export const toggleLike = async (id: string): Promise<{ likesCount: number; isLikedByCurrentUser: boolean }> => {
+  const { data } = await api.post(`/api/posts/${id}/like`);
+  return data;
 };
