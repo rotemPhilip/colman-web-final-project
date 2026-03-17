@@ -1,8 +1,8 @@
 import { Response } from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Post from "../models/post";
-import Comment from "../models/comment";
 import { AuthRequest } from "../middleware/auth";
+import { findSimilarChunks, reindexAllPosts } from "../services/embedding";
 
 let genAI: GoogleGenerativeAI | null = null;
 const getGenAI = () => {
@@ -12,12 +12,12 @@ const getGenAI = () => {
   return genAI;
 };
 
-// Rate limiting: track requests per user
+// ── Rate limiting ───────────────────────────────────────────
+
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 5;
 const RATE_WINDOW = 60 * 1000;
 
-// Global rate limiting: cap total requests across all users to stay under Gemini free tier (10 RPM)
 let globalRequestCount = 0;
 let globalRateLimitReset = Date.now();
 const GLOBAL_RATE_LIMIT = 10;
@@ -45,9 +45,14 @@ const checkRateLimit = (userId: string): boolean => {
   return true;
 };
 
-// Simple cache to avoid repeat API calls for the same query
+// ── Cache ───────────────────────────────────────────────────
+
 const searchCache = new Map<string, { data: unknown; expiresAt: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 5 * 60 * 1000;
+
+// ── RAG search controller ───────────────────────────────────
+
+const TOP_K_CHUNKS = 5; // Retrieve top 3–5 most relevant chunks
 
 export const aiSearch = async (
   req: AuthRequest,
@@ -63,59 +68,74 @@ export const aiSearch = async (
 
     const trimmedQuery = query.trim().toLowerCase();
 
-    // Check cache first
+    // ── Cache check ───────────────────────────────────────
     const cached = searchCache.get(trimmedQuery);
     if (cached && Date.now() < cached.expiresAt) {
       res.json(cached.data);
       return;
     }
 
-    // Rate limit check
+    // ── Rate limits ───────────────────────────────────────
     if (!checkRateLimit(req.userId!)) {
       res.status(429).json({ message: "Too many AI requests. Please wait a moment." });
       return;
     }
-
-    // Global rate limit check — prevents exceeding Gemini free tier (10 RPM)
     if (!checkGlobalLimit()) {
       res.status(429).json({ message: "Server is reaching capacity. Try again in a minute." });
       return;
     }
 
-    // Fetch posts (limit to 20 for token efficiency)
-    const posts = await Post.find()
-      .populate("owner", "username profileImage")
-      .sort({ createdAt: -1 })
-      .limit(20)
-      .lean();
+    // ── RAG Step 1: Query Embedding + Vector Search ───────
+    const topChunks = await findSimilarChunks(query.trim(), TOP_K_CHUNKS);
 
-    if (posts.length === 0) {
-      res.json({ results: [], summary: "No posts available to search." });
+    if (topChunks.length === 0) {
+      res.json({ answer: "No data available to search.", sources: [] });
       return;
     }
 
-    // Compact format — one line per post, minimal tokens
-    const postsCompact = posts.map((p) => {
-      const author = (p.owner as { username?: string })?.username || "?";
-      const desc = (p.description || "").slice(0, 80);
-      return `${p._id}|${p.dishName}|${p.restaurant}|${desc}|${author}`;
-    }).join("\n");
+    // ── RAG Step 2: Fetch source post metadata ────────────
+    const uniquePostIds = [...new Set(topChunks.map((c) => c.postId))];
+    const posts = await Post.find({ _id: { $in: uniquePostIds } })
+      .populate("owner", "username profileImage")
+      .lean();
+    const postMap = new Map(posts.map((p) => [p._id.toString(), p]));
 
-    const model = getGenAI().getGenerativeModel({ model: "gemini-flash-latest" });
-    console.log(`[AI] Sending request to Gemini for query: "${query.trim()}"`);
+    // Build context from retrieved chunks
+    const contextParts = topChunks.map((chunk, i) => {
+      const post = postMap.get(chunk.postId);
+      const title = post ? `${post.dishName} @ ${post.restaurant}` : "Unknown Post";
+      return `[Source ${i + 1} — "${title}"]\n${chunk.content}`;
+    });
+    const context = contextParts.join("\n\n");
 
-    const prompt = `Food app search. Posts (id|dish|restaurant|description|author):
-${postsCompact}
+    // ── RAG Step 3: Prompt Augmentation + LLM Generation ──
+    const model = getGenAI().getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: { temperature: 0.2 },
+    });
 
-Query: "${query.trim()}"
+    console.log(`[AI] RAG search — query: "${query.trim()}", chunks: ${topChunks.length}`);
 
-Return JSON only: {"results":[{"postId":"<id>","relevance":"<why>"}],"summary":"<short summary>"}
-Max 10 results. Match semantically (e.g. "sweet"=desserts). Same language as query. No markdown.`;
+    const prompt = `You are BiteShare's food assistant. Answer the user's question based ONLY on the context below.
+If the context does not contain enough information, say so honestly.
+Be concise and helpful. Use the same language as the user's question.
+
+--- CONTEXT ---
+${context}
+--- END CONTEXT ---
+
+User question: "${query.trim()}"
+
+Respond in JSON only (no markdown fences):
+{
+  "answer": "<your helpful answer based on the context>",
+  "sources": [<indexes of the sources you used, e.g. 1, 2>]
+}`;
 
     const result = await model.generateContent(prompt);
     const responseText = result.response.text().trim();
 
-    let parsed;
+    let parsed: { answer: string; sources: number[] };
     try {
       const cleanJson = responseText
         .replace(/^```(?:json)?\s*/i, "")
@@ -124,39 +144,42 @@ Max 10 results. Match semantically (e.g. "sweet"=desserts). Same language as que
       parsed = JSON.parse(cleanJson);
     } catch {
       res.json({
-        results: [],
-        summary: "Could not process search. Please try a different query.",
+        answer: "Could not process search. Please try a different query.",
+        sources: [],
       });
       return;
     }
 
-    // Enrich results with full post data
-    const postMap = new Map(posts.map((p) => [p._id.toString(), p]));
-    const postIds = posts.map((p) => p._id);
-    const commentCounts = await Comment.aggregate([
-      { $match: { post: { $in: postIds } } },
-      { $group: { _id: "$post", count: { $sum: 1 } } },
-    ]);
-    const countMap = new Map(
-      commentCounts.map((c: { _id: string; count: number }) => [c._id.toString(), c.count])
-    );
+    // Map source indexes back to post data
+    const sources = (parsed.sources || [])
+      .filter((idx: number) => idx >= 1 && idx <= topChunks.length)
+      .map((idx: number) => {
+        const chunk = topChunks[idx - 1];
+        const post = postMap.get(chunk.postId);
+        return post
+          ? {
+              postId: post._id.toString(),
+              dishName: post.dishName,
+              restaurant: post.restaurant,
+            }
+          : null;
+      })
+      .filter(Boolean);
 
-    const enrichedResults = (parsed.results || [])
-      .filter((r: { postId: string }) => postMap.has(r.postId))
-      .map((r: { postId: string; relevance: string }) => {
-        const post = postMap.get(r.postId)!;
-        return {
-          post: { ...post, commentCount: countMap.get(r.postId) || 0 },
-          relevance: r.relevance,
-        };
-      });
+    // Deduplicate sources by postId
+    const seen = new Set<string>();
+    const uniqueSources = sources.filter((s: { postId: string } | null) => {
+      if (!s || seen.has(s.postId)) return false;
+      seen.add(s.postId);
+      return true;
+    });
 
     const responseData = {
-      results: enrichedResults,
-      summary: parsed.summary || "",
+      answer: parsed.answer || "",
+      sources: uniqueSources,
     };
 
-    // Cache the result
+    // Cache
     searchCache.set(trimmedQuery, { data: responseData, expiresAt: Date.now() + CACHE_TTL });
 
     res.json(responseData);
@@ -168,5 +191,20 @@ Max 10 results. Match semantically (e.g. "sweet"=desserts). Same language as que
       return;
     }
     res.status(500).json({ message: "AI search failed. Please try again." });
+  }
+};
+
+// ── Reindex all posts ───────────────────────────────────────
+
+export const reindex = async (
+  _req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const result = await reindexAllPosts();
+    res.json(result);
+  } catch (err) {
+    console.error("Reindex error:", err);
+    res.status(500).json({ message: "Reindex failed." });
   }
 };

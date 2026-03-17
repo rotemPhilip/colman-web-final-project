@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { aiSearch } from "../controllers/ai";
+import { aiSearch, reindex } from "../controllers/ai";
 import authMiddleware from "../middleware/auth";
 
 const router = Router();
@@ -8,8 +8,12 @@ const router = Router();
  * @swagger
  * /api/ai/search:
  *   post:
- *     summary: AI-powered smart search for posts
- *     description: Uses Google Gemini to find and rank posts relevant to a free-text query. Supports natural language in any language.
+ *     summary: AI-powered RAG search for posts
+ *     description: |
+ *       Uses Retrieval-Augmented Generation (RAG) to answer natural-language questions based on the app's data.
+ *       1. Converts the query to an embedding.
+ *       2. Retrieves the top-5 most relevant chunks via cosine similarity.
+ *       3. Sends retrieved context + question to Gemini (low temperature) for a grounded answer.
  *     tags: [AI]
  *     security:
  *       - bearerAuth: []
@@ -24,29 +28,31 @@ const router = Router();
  *             properties:
  *               query:
  *                 type: string
- *                 description: Free-text search query
- *                 example: "best pasta in town"
+ *                 description: Natural language question about food posts
+ *                 example: "What are the best pizza places?"
  *     responses:
  *       200:
- *         description: AI search results
+ *         description: RAG search result
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 results:
+ *                 answer:
+ *                   type: string
+ *                   description: AI-generated answer based only on retrieved context
+ *                 sources:
  *                   type: array
+ *                   description: Posts that were used to generate the answer
  *                   items:
  *                     type: object
  *                     properties:
- *                       post:
- *                         $ref: '#/components/schemas/Post'
- *                       relevance:
+ *                       postId:
  *                         type: string
- *                         description: AI explanation of why this post matches
- *                 summary:
- *                   type: string
- *                   description: AI-generated summary of the search results
+ *                       dishName:
+ *                         type: string
+ *                       restaurant:
+ *                         type: string
  *       400:
  *         description: Missing query
  *       429:
@@ -55,5 +61,33 @@ const router = Router();
  *         description: AI search failed
  */
 router.post("/search", authMiddleware, aiSearch);
+
+/**
+ * @swagger
+ * /api/ai/reindex:
+ *   post:
+ *     summary: Generate embeddings for all existing posts
+ *     description: Backfills embeddings for posts that don't have them yet. Processes sequentially to respect API rate limits.
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Reindex results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 indexed:
+ *                   type: number
+ *                 skipped:
+ *                   type: number
+ *                 errors:
+ *                   type: number
+ *       500:
+ *         description: Reindex failed
+ */
+router.post("/reindex", authMiddleware, reindex);
 
 export default router;

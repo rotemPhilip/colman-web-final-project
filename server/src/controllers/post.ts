@@ -2,6 +2,7 @@ import { Response } from "express";
 import Post from "../models/post";
 import Comment from "../models/comment";
 import { AuthRequest } from "../middleware/auth";
+import { upsertPostEmbedding, deletePostEmbedding } from "../services/embedding";
 
 // Create a post
 export const createPost = async (
@@ -27,6 +28,9 @@ export const createPost = async (
     });
 
     const populated = await post.populate("owner", "username profileImage");
+
+    // Generate embedding for the new post (fire & forget)
+    upsertPostEmbedding(populated).catch((e) => console.error("Embedding create error:", e));
 
     res.status(201).json(populated);
   } catch (err) {
@@ -160,6 +164,9 @@ export const updatePost = async (
     await post.save();
     const populated = await post.populate("owner", "username profileImage");
 
+    // Re-generate embedding after update (fire & forget)
+    upsertPostEmbedding(populated).catch((e) => console.error("Embedding update error:", e));
+
     res.json(populated);
   } catch (err) {
     console.error("Update post error:", err);
@@ -186,8 +193,9 @@ export const deletePost = async (
       return;
     }
 
-    // Delete all comments associated with this post
+    // Delete all comments and embedding associated with this post
     await Comment.deleteMany({ post: post._id });
+    await deletePostEmbedding(post._id);
     await post.deleteOne();
     res.json({ message: "Post deleted." });
   } catch (err) {

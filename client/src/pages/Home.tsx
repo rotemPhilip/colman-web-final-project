@@ -16,7 +16,7 @@ import {
   deletePost,
   type Post,
 } from "../services/post.service";
-import { aiSearch, type AISearchResult } from "../services/ai.service";
+import { aiSearch, type AISearchSource } from "../services/ai.service";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const PAGE_SIZE = 6;
@@ -55,11 +55,13 @@ const Home = () => {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // AI search state
-  const [searchQuery, setSearchQuery] = useState("");
+  // AI search state — restore from sessionStorage on mount
+  const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem("ai_query") || "");
   const [searching, setSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<AISearchResult[] | null>(null);
-  const [searchSummary, setSearchSummary] = useState("");
+  const [searchAnswer, setSearchAnswer] = useState<string | null>(() => sessionStorage.getItem("ai_answer"));
+  const [searchSources, setSearchSources] = useState<AISearchSource[]>(() => {
+    try { return JSON.parse(sessionStorage.getItem("ai_sources") || "[]"); } catch { return []; }
+  });
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
     setToast({ message, type });
@@ -232,12 +234,15 @@ const Home = () => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     setSearching(true);
-    setSearchResults(null);
-    setSearchSummary("");
+    setSearchAnswer(null);
+    setSearchSources([]);
     try {
       const data = await aiSearch(searchQuery.trim());
-      setSearchResults(data.results);
-      setSearchSummary(data.summary);
+      setSearchAnswer(data.answer);
+      setSearchSources(data.sources || []);
+      sessionStorage.setItem("ai_query", searchQuery.trim());
+      sessionStorage.setItem("ai_answer", data.answer);
+      sessionStorage.setItem("ai_sources", JSON.stringify(data.sources || []));
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
@@ -250,8 +255,11 @@ const Home = () => {
 
   const clearSearch = () => {
     setSearchQuery("");
-    setSearchResults(null);
-    setSearchSummary("");
+    setSearchAnswer(null);
+    setSearchSources([]);
+    sessionStorage.removeItem("ai_query");
+    sessionStorage.removeItem("ai_answer");
+    sessionStorage.removeItem("ai_sources");
   };
 
   return (
@@ -342,7 +350,7 @@ const Home = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ boxShadow: "none" }}
               />
-              {searchResults !== null && (
+              {searchAnswer !== null && (
                 <button
                   type="button"
                   className="btn btn-link text-muted border-0 px-2"
@@ -375,57 +383,28 @@ const Home = () => {
           )}
 
           {/* AI Search Results */}
-          {searchResults !== null && (
+          {searchAnswer !== null && (
             <div className="mb-4 animate-fade-in">
-              {searchSummary && (
-                <div className="alert alert-info border-0 d-flex align-items-start gap-2 py-2 px-3" style={{ background: "linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%)" }}>
-                  <i className="bi bi-stars text-primary mt-1"></i>
-                  <span className="small">{searchSummary}</span>
-                </div>
-              )}
-              {searchResults.length === 0 ? (
-                <div className="text-center py-4">
-                  <i className="bi bi-search text-muted" style={{ fontSize: "2rem" }}></i>
-                  <p className="text-muted small mt-2 mb-0">No matching posts found. Try a different query.</p>
-                </div>
-              ) : (
-                <div className="d-flex flex-column gap-3">
-                  {searchResults.map(({ post, relevance }) => (
+              <div className="alert alert-info border-0 d-flex align-items-start gap-2 py-2 px-3" style={{ background: "linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%)" }}>
+                <i className="bi bi-stars text-primary mt-1"></i>
+                <span className="small" style={{ whiteSpace: "pre-wrap" }}>{searchAnswer}</span>
+              </div>
+              {searchSources.length > 0 && (
+                <div className="d-flex flex-column gap-2 mt-3">
+                  <p className="text-muted small fw-semibold mb-1">
+                    <i className="bi bi-journal-text me-1"></i>Sources
+                  </p>
+                  {searchSources.map((source) => (
                     <div
-                      key={post._id}
+                      key={source.postId}
                       className="card border-0 shadow-sm overflow-hidden feed-card cursor-pointer"
-                      onClick={() => navigate(`/post/${post._id}`)}
+                      onClick={() => navigate(`/post/${source.postId}`)}
                     >
-                      <div className="card-header bg-white d-flex align-items-center gap-2 py-2 px-3" style={{ borderBottom: "2px solid #e0e7ff" }}>
-                        <i className="bi bi-stars text-primary" style={{ fontSize: "0.75rem" }}></i>
-                        <span className="small text-primary fw-medium">{relevance}</span>
-                      </div>
-                      {post.image && (
-                        <img
-                          src={getImageUrl(post.image)}
-                          alt={post.dishName}
-                          className="card-img-top"
-                          style={{ maxHeight: 300, objectFit: "cover" }}
-                        />
-                      )}
                       <div className="card-body py-2 px-3">
-                        <div className="d-flex align-items-center gap-2 mb-1">
-                          {post.owner.profileImage ? (
-                            <img src={getImageUrl(post.owner.profileImage)} alt="" className="avatar-circle-sm" style={{ width: 24, height: 24 }} />
-                          ) : (
-                            <div className="avatar-placeholder avatar-placeholder-sm" style={{ width: 24, height: 24, fontSize: "0.6rem" }}>
-                              {post.owner.username?.charAt(0).toUpperCase() || "?"}
-                            </div>
-                          )}
-                          <span className="fw-semibold small">{post.owner.username}</span>
-                        </div>
-                        <h6 className="fw-bold mb-1">{post.dishName}</h6>
-                        <p className="text-primary small fw-semibold mb-1">
-                          <i className="bi bi-geo-alt-fill me-1"></i>{post.restaurant}
+                        <h6 className="fw-bold mb-1">{source.dishName}</h6>
+                        <p className="text-primary small fw-semibold mb-0">
+                          <i className="bi bi-geo-alt-fill me-1"></i>{source.restaurant}
                         </p>
-                        {post.description && (
-                          <p className="text-muted small mb-0">{post.description}</p>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -440,7 +419,7 @@ const Home = () => {
           )}
 
           {/* Create Form */}
-          {searchResults === null && showCreate && (
+          {searchAnswer === null && showCreate && (
             <div className="card border-0 shadow-sm mb-4 animate-slide-down">
               <div className="card-body p-4">
                 <div className="d-flex align-items-center gap-2 mb-3">
@@ -540,7 +519,7 @@ const Home = () => {
           )}
 
           {/* Feed */}
-          {searchResults === null && (initialLoad ? (
+          {searchAnswer === null && (initialLoad ? (
             <div className="text-center py-5">
               <div className="spinner-border text-primary" role="status">
                 <span className="visually-hidden">Loading...</span>

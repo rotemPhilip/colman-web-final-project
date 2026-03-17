@@ -51,7 +51,7 @@ describe("Post API", () => {
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe("Dish name, restaurant, and description are required.");
+      expect(res.body.message).toBe("Dish name and restaurant are required.");
     });
 
     it("should return 401 without authentication", async () => {
