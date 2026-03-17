@@ -35,7 +35,7 @@ const clientPath = path.join(__dirname, "../../client/dist");
 app.use(express.static(clientPath));
 
 // React Router fallback - return index.html for non-API routes
-app.get("*", (req, res) => {
+app.get("/{*path}", (req, res) => {
   res.sendFile(path.join(clientPath, "index.html"));
 });
 
