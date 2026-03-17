@@ -38,7 +38,7 @@ const startServer = async () => {
   try {
     console.log(process.env.MONGO_URI);
     
-    await mongoose.connect(process.env.MONGO_URI as string);
+    await mongoose.connect(process.env.MONGO_URI as string, {authSource: "admin"});
     console.log("Connected to MongoDB");
   } catch (err) {
     console.log("Failed to connect to MongoDB, running without DB");
