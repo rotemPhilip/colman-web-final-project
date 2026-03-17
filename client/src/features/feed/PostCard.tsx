@@ -16,7 +16,7 @@ interface PostCardProps {
   animationDelay?: string;
 }
 
-const PostCard = ({ post, isOwn, onSave, onDelete, onToggleLike, animationDelay }: PostCardProps) => {
+const PostCard = ({ post, isOwn, onSave, onDelete, animationDelay }: PostCardProps) => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
