@@ -15,7 +15,7 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
 // Serve uploaded images as static files
@@ -30,8 +30,13 @@ app.use("/api/posts", postRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/comments", commentRoutes);
 
-app.get("/", (_req, res) => {
-  res.send("BiteShare API is running");
+// Serve React client static files
+const clientPath = path.join(__dirname, "../../client/dist");
+app.use(express.static(clientPath));
+
+// React Router fallback - return index.html for non-API routes
+app.get("*", (req, res) => {
+  res.sendFile(path.join(clientPath, "index.html"));
 });
 
 const PORT = process.env.PORT || 3001;

@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "nodemon --exec ts-node src/app.ts",
     "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/app.js",
-    "test": "jest --forceExit --detectOpenHandles --verbose"
+    "start": "node dist/src/app.js",
+    "test": "jest --forceExit --detectOpenHandles --verbose",
+    "prod": "tsc -p tsconfig.build.json && pm2 restart ecosystem.config.js --env production"
   },
   "keywords": [],
   "author": "",
