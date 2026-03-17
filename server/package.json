@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/src/app.js",
     "test": "jest --forceExit --detectOpenHandles --verbose",
-    "prod": "tsc -p tsconfig.build.json && pm2 restart ecosystem.config.js --env production"
+    "prod": "tsc -p tsconfig_prod.json && pm2 restart ecosystem.config.js --env production"
   },
   "keywords": [],
   "author": "",
