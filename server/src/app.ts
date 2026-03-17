@@ -3,6 +3,8 @@ import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import path from "path";
+import https from "https";
+import fs from "fs";
 import authRoutes from "./routes/auth";
 import postRoutes from "./routes/post";
 import userRoutes from "./routes/user";
@@ -45,9 +47,19 @@ const startServer = async () => {
     console.error(err);
   }
 
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+  if (process.env.NODE_ENV === "production") {
+    const sslOptions = {
+      key: fs.readFileSync(path.join(__dirname, "../../client-key.pem")),
+      cert: fs.readFileSync(path.join(__dirname, "../../client-cert.pem")),
+    };
+    https.createServer(sslOptions, app).listen(PORT, () => {
+      console.log(`Server running on HTTPS port ${PORT}`);
+    });
+  } else {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  }
 };
 
 // Only start the server when this file is run directly (not imported by tests)
