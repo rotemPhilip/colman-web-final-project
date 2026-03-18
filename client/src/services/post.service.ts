@@ -52,9 +52,7 @@ export const getAllPosts = async (
 };
 
 export const createPost = async (formData: FormData): Promise<Post> => {
-  const { data } = await api.post<Post>("/api/posts", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const { data } = await api.post<Post>("/api/posts", formData);
   return data;
 };
 
@@ -62,9 +60,7 @@ export const updatePost = async (
   id: string,
   formData: FormData
 ): Promise<Post> => {
-  const { data } = await api.put<Post>(`/api/posts/${id}`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const { data } = await api.put<Post>(`/api/posts/${id}`, formData);
   return data;
 };
 
