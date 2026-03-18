@@ -130,7 +130,7 @@ Respond in JSON only (no markdown fences):
   "sources": [<indexes of the sources you used, e.g. 1, 2>]
 }`;
 
-    const result = await getGenAI().models.generateContent({ model: "gemini-1.5-flash", contents: prompt, config: { temperature: 0.2 } });
+    const result = await getGenAI().models.generateContent({ model: "gemini-2.5-flash", contents: prompt, config: { temperature: 0.2 } });
     console.log(`[AI] generateContent succeeded`);
     const responseText = (result.text ?? "").trim();
     console.log(`[AI] Raw Gemini response: ${responseText.slice(0, 300)}`);
