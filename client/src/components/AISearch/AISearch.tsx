@@ -70,6 +70,15 @@ const AISearch = () => {
         </div>
       </form>
 
+      {searching && (
+        <div className="mt-3 d-flex align-items-center gap-2 px-1">
+          <div className="spinner-border spinner-border-sm text-primary" role="status">
+            <span className="visually-hidden">Searching...</span>
+          </div>
+          <span className="small text-muted">AI is thinking...</span>
+        </div>
+      )}
+
       {searchResults !== null && (
         <div className="mt-3 animate-fade-in">
           <div
