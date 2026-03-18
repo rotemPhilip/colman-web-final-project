@@ -2,22 +2,28 @@ import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import { Express } from "express";
 
-const options: swaggerJsdoc.Options = {
-  definition: {
-    openapi: "3.0.0",
-    info: {
-      title: "BiteShare API",
-      version: "1.0.0",
-      description: "API documentation for the BiteShare food-sharing platform",
-    },
-    servers: [
-      {
-        url: process.env.NODE_ENV === "production"
-          ? `https://${process.env.DOMAIN || "localhost"}`
-          : `http://localhost:${process.env.PORT || 3001}`,
-        description: process.env.NODE_ENV === "production" ? "Production server" : "Development server",
+export const setupSwagger = (app: Express): void => {
+  const domain = process.env.DOMAIN || "localhost";
+  const serverUrl = domain.startsWith("http")
+    ? domain
+    : process.env.NODE_ENV === "production"
+      ? `https://${domain}`
+      : `http://localhost:${process.env.PORT || 3001}`;
+
+  const options: swaggerJsdoc.Options = {
+    definition: {
+      openapi: "3.0.0",
+      info: {
+        title: "BiteShare API",
+        version: "1.0.0",
+        description: "API documentation for the BiteShare food-sharing platform",
       },
-    ],
+      servers: [
+        {
+          url: serverUrl,
+          description: process.env.NODE_ENV === "production" ? "Production server" : "Development server",
+        },
+      ],
     components: {
       securitySchemes: {
         bearerAuth: {
@@ -125,10 +131,8 @@ const options: swaggerJsdoc.Options = {
   apis: ["./src/routes/*.ts"],
 };
 
-const swaggerSpec = swaggerJsdoc(options);
-
-export const setupSwagger = (app: Express): void => {
+  const swaggerSpec = swaggerJsdoc(options);
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 };
 
-export default swaggerSpec;
+export default {};
