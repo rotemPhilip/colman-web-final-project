@@ -8,7 +8,7 @@ module.exports = {
       },
       env_production: {
         NODE_ENV: "production",
-        PORT: 443,
+        HTTPS_PORT: 443,
       },
     },
   ],

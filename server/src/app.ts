@@ -41,7 +41,9 @@ app.get("/{*path}", (req, res) => {
   res.sendFile(path.join(clientPath, "index.html"));
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.NODE_ENV === "production"
+  ? (process.env.HTTPS_PORT || process.env.PORT || 443)
+  : (process.env.PORT || 3001);
 
 const startServer = async () => {
   try {
