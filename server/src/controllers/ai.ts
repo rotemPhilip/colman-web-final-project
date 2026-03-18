@@ -7,7 +7,7 @@ import { findSimilarChunks, reindexAllPosts } from "../services/embedding";
 let genAI: GoogleGenAI | null = null;
 const getGenAI = () => {
   if (!genAI) {
-    const key = "AIzaSyCryRGvUY-9ET9e08nBPrmJ_q60AIBssug" ;
+    const key = process.env.GEMINI_API_KEY || "";
     console.log("[AI] Using GEMINI_API_KEY:", key ? `${key.slice(0, 8)}...${key.slice(-4)}` : "MISSING");
     genAI = new GoogleGenAI({ apiKey: key });
   }
