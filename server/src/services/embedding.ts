@@ -1,12 +1,12 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import Embedding, { IEmbedding } from "../models/embedding";
 import Post, { IPost } from "../models/post";
 import mongoose from "mongoose";
 
-let genAI: GoogleGenerativeAI | null = null;
+let genAI: GoogleGenAI | null = null;
 const getGenAI = () => {
   if (!genAI) {
-    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+    genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
   }
   return genAI;
 };
@@ -78,9 +78,8 @@ export const splitIntoChunks = (text: string): string[] => {
  * Call Gemini embedding API for a single text.
  */
 export const generateEmbedding = async (text: string): Promise<number[]> => {
-  const model = getGenAI().getGenerativeModel({ model: "gemini-embedding-001" });
-  const result = await model.embedContent(text);
-  return result.embedding.values;
+  const result = await getGenAI().models.embedContent({ model: "text-embedding-004", contents: text });
+  return result.embeddings?.[0]?.values ?? [];
 };
 
 // ── Post embedding CRUD ─────────────────────────────────────

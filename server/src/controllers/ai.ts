@@ -1,15 +1,15 @@
 import { Response } from "express";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import Post from "../models/post";
 import { AuthRequest } from "../middleware/auth";
 import { findSimilarChunks, reindexAllPosts } from "../services/embedding";
 
-let genAI: GoogleGenerativeAI | null = null;
+let genAI: GoogleGenAI | null = null;
 const getGenAI = () => {
   if (!genAI) {
     const key = process.env.GEMINI_API_KEY || "";
     console.log("[AI] Using GEMINI_API_KEY:", key ? `${key.slice(0, 8)}...${key.slice(-4)}` : "MISSING");
-    genAI = new GoogleGenerativeAI(key);
+    genAI = new GoogleGenAI({ apiKey: key });
   }
   return genAI;
 };
@@ -111,11 +111,6 @@ export const aiSearch = async (
     const context = contextParts.join("\n\n");
 
     // ── RAG Step 3: Prompt Augmentation + LLM Generation ──
-    const model = getGenAI().getGenerativeModel({
-      model: "gemini-2.0-flash",
-      generationConfig: { temperature: 0.2 },
-    });
-
     console.log(`[AI] RAG search — query: "${query.trim()}", chunks: ${topChunks.length}`);
 
     const prompt = `You are BiteShare's food assistant. Answer the user's question based ONLY on the context below.
@@ -134,8 +129,8 @@ Respond in JSON only (no markdown fences):
   "sources": [<indexes of the sources you used, e.g. 1, 2>]
 }`;
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text().trim();
+    const result = await getGenAI().models.generateContent({ model: "gemini-2.0-flash", contents: prompt, config: { temperature: 0.2 } });
+    const responseText = (result.text ?? "").trim();
 
     let parsed: { answer: string; sources: number[] };
     try {
