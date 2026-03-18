@@ -6,7 +6,9 @@ import mongoose from "mongoose";
 let genAI: GoogleGenAI | null = null;
 const getGenAI = () => {
   if (!genAI) {
-    genAI = new GoogleGenAI({ apiKey: "AIzaSyCryRGvUY-9ET9e08nBPrmJ_q60AIBssug"  });
+    const key = process.env.GEMINI_API_KEY || "";
+    console.log("[Embedding] Using GEMINI_API_KEY:", key ? `${key.slice(0, 8)}...${key.slice(-4)}` : "MISSING");
+    genAI = new GoogleGenAI({ apiKey: key });
   }
   return genAI;
 };
@@ -78,8 +80,15 @@ export const splitIntoChunks = (text: string): string[] => {
  * Call Gemini embedding API for a single text.
  */
 export const generateEmbedding = async (text: string): Promise<number[]> => {
-  const result = await getGenAI().models.embedContent({ model: "gemini-embedding-001", contents: text });
-  return result.embeddings?.[0]?.values ?? [];
+  try {
+    const result = await getGenAI().models.embedContent({ model: "gemini-embedding-001", contents: text });
+    return result.embeddings?.[0]?.values ?? [];
+  } catch (err: unknown) {
+    const status = (err as { status?: number }).status;
+    const message = (err as { message?: string }).message ?? String(err);
+    console.error(`[Embedding] generateEmbedding failed — status: ${status ?? "unknown"}, message: ${message}`);
+    throw err;
+  }
 };
 
 // ── Post embedding CRUD ─────────────────────────────────────

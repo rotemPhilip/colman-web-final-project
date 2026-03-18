@@ -12,7 +12,7 @@ import commentRoutes from "./routes/comment";
 import aiRoutes from "./routes/ai";
 import { setupSwagger } from "./swagger";
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, "../.env"), override: true });
 
 const app = express();
 
