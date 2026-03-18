@@ -143,7 +143,7 @@ Respond in JSON only (no markdown fences):
       parsed = JSON.parse(cleanJson);
     } catch {
       console.error(`[AI] Failed to parse Gemini JSON response. Raw text: ${responseText}`);
-      res.status(500).json({ message: "AI search failed. Please try again." });
+      res.json({ answer: "Could not process search. Please try a different query.", sources: [] });
       return;
     }
 
