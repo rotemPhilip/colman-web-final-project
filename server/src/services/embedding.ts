@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 let genAI: GoogleGenAI | null = null;
 const getGenAI = () => {
   if (!genAI) {
-    genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+    genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "AIzaSyCryRGvUY-9ET9e08nBPrmJ_q60AIBssug" });
   }
   return genAI;
 };
