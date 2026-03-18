@@ -73,6 +73,10 @@ web_modules/
 .env.*
 !.env.example
 
+# SSL certificates - must not be stored in git
+*.pem
+*.csr
+
 # Uploaded files
 uploads/
 

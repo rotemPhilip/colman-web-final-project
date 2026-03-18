@@ -1,7 +1,32 @@
+import mongoose from "mongoose";
 import { Response } from "express";
 import Post from "../models/post";
 import Comment from "../models/comment";
 import { AuthRequest } from "../middleware/auth";
+
+// Shared helper: attach commentCount, likesCount, isLikedByCurrentUser to posts
+const attachPostMeta = async (
+  posts: InstanceType<typeof Post>[],
+  currentUserId?: string
+) => {
+  const postIds = posts.map((p) => p._id);
+  const commentCounts = await Comment.aggregate([
+    { $match: { post: { $in: postIds } } },
+    { $group: { _id: "$post", count: { $sum: 1 } } },
+  ]);
+  const countMap = new Map(commentCounts.map((c) => [c._id.toString(), c.count]));
+  return posts.map((p) => {
+    const obj = p.toObject() as any;
+    return {
+      ...obj,
+      commentCount: countMap.get(p._id.toString()) || 0,
+      likesCount: obj.likes.length,
+      isLikedByCurrentUser: obj.likes
+        .map((id: mongoose.Types.ObjectId) => id.toString())
+        .includes(currentUserId),
+    };
+  });
+};
 
 // Create a post
 export const createPost = async (
@@ -75,19 +100,9 @@ export const getPostsByUser = async (
       Post.countDocuments({ owner: userId }),
     ]);
 
-    // Attach comment counts
-    const postIds = posts.map((p) => p._id);
-    const commentCounts = await Comment.aggregate([
-      { $match: { post: { $in: postIds } } },
-      { $group: { _id: "$post", count: { $sum: 1 } } },
-    ]);
-    const countMap = new Map(commentCounts.map((c) => [c._id.toString(), c.count]));
-    const postsWithComments = posts.map((p) => ({
-      ...p.toObject(),
-      commentCount: countMap.get(p._id.toString()) || 0,
-    }));
+    const postsWithMeta = await attachPostMeta(posts, req.userId);
 
-    res.json({ posts: postsWithComments, total, page, pages: Math.ceil(total / limit) });
+    res.json({ posts: postsWithMeta, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
     console.error("Get posts by user error:", err);
     res.status(500).json({ message: "Server error." });
@@ -113,19 +128,9 @@ export const getAllPosts = async (
       Post.countDocuments(),
     ]);
 
-    // Attach comment counts
-    const postIds = posts.map((p) => p._id);
-    const commentCounts = await Comment.aggregate([
-      { $match: { post: { $in: postIds } } },
-      { $group: { _id: "$post", count: { $sum: 1 } } },
-    ]);
-    const countMap = new Map(commentCounts.map((c) => [c._id.toString(), c.count]));
-    const postsWithComments = posts.map((p) => ({
-      ...p.toObject(),
-      commentCount: countMap.get(p._id.toString()) || 0,
-    }));
+    const postsWithMeta = await attachPostMeta(posts, req.userId);
 
-    res.json({ posts: postsWithComments, total, page, pages: Math.ceil(total / limit) });
+    res.json({ posts: postsWithMeta, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
     console.error("Get all posts error:", err);
     res.status(500).json({ message: "Server error." });
@@ -152,9 +157,9 @@ export const updatePost = async (
       return;
     }
 
-    if (dishName) post.dishName = dishName;
-    if (restaurant) post.restaurant = restaurant;
-    if (description) post.description = description;
+    if (dishName !== undefined) post.dishName = dishName;
+    if (restaurant !== undefined) post.restaurant = restaurant;
+    if (description !== undefined) post.description = description;
     if (req.file) post.image = `/uploads/${req.file.filename}`;
 
     await post.save();
@@ -163,6 +168,35 @@ export const updatePost = async (
     res.json(populated);
   } catch (err) {
     console.error("Update post error:", err);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Toggle like on a post
+export const toggleLike = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      res.status(404).json({ message: "Post not found." });
+      return;
+    }
+
+    const userId = new mongoose.Types.ObjectId(req.userId);
+    const alreadyLiked = post.likes.some((id) => id.equals(userId));
+    const update = alreadyLiked
+      ? { $pull: { likes: userId } }
+      : { $addToSet: { likes: userId } };
+
+    const updated = await Post.findByIdAndUpdate(req.params.id, update, { new: true });
+    res.json({
+      likesCount: updated!.likes.length,
+      isLikedByCurrentUser: !alreadyLiked,
+    });
+  } catch (err) {
+    console.error("Toggle like error:", err);
     res.status(500).json({ message: "Server error." });
   }
 };
