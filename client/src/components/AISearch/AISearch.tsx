@@ -103,7 +103,7 @@ const AISearch = ({ onActiveChange }: AISearchProps) => {
             className="alert alert-info border-0 d-flex align-items-start gap-2 py-2 px-3"
             style={{ background: "linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%)" }}
           >
-            <i className="bi bi-stars text-primary mt-1"></i>
+            <i className="bi bi-stars text-primary"></i>
             <span className="small" style={{ whiteSpace: "pre-wrap" }}>
               {searchResults.answer}
             </span>

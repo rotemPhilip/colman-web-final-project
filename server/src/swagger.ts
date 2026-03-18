@@ -12,8 +12,10 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: "http://localhost:3001",
-        description: "Development server",
+        url: process.env.NODE_ENV === "production"
+          ? `https://${process.env.DOMAIN || "localhost"}`
+          : `http://localhost:${process.env.PORT || 3001}`,
+        description: process.env.NODE_ENV === "production" ? "Production server" : "Development server",
       },
     ],
     components: {
