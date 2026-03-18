@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import "./Profile.css";
 import AppNavbar from "../../components/AppNavbar/AppNavbar";
-import Toast from "../../components/Toast/Toast";
 import LoadingSpinner from "../../components/LoadingSpinner/LoadingSpinner";
 import { useProfile } from "../../features/profile/useProfile";
 import ProfileHeader from "../../features/profile/ProfileHeader";
@@ -24,7 +23,6 @@ const Profile = () => {
     saving,
     fileInputRef,
     showNewPost,
-    toast,
     setError,
     setShowNewPost,
     handleEditStart,
@@ -57,7 +55,6 @@ const Profile = () => {
 
   return (
     <div className="min-vh-100 bg-light">
-      <Toast toast={toast} />
       <AppNavbar showBack />
 
       <main className="container" style={{ maxWidth: 700 }}>

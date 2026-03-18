@@ -14,7 +14,7 @@ import {
   toggleLike,
   type Post,
 } from "../../services/post.service";
-import { useToast } from "../../hooks/useToast";
+import { showToast } from "../../components/Toast/Toast";
 
 export type PostFormData = {
   dishName: string;
@@ -49,7 +49,7 @@ export const useProfile = () => {
 
   const [showNewPost, setShowNewPost] = useState(false);
 
-  const { toast, showToast } = useToast();
+
   const isOwnProfile = user?._id === id;
 
   useEffect(() => {
@@ -208,7 +208,6 @@ export const useProfile = () => {
     saving,
     fileInputRef,
     showNewPost,
-    toast,
     setError,
     setShowNewPost,
     handleEditStart,

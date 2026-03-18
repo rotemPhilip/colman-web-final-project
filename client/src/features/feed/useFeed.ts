@@ -9,7 +9,7 @@ import {
   toggleLike,
   type Post,
 } from "../../services/post.service";
-import { useToast } from "../../hooks/useToast";
+import { showToast } from "../../components/Toast/Toast";
 
 const PAGE_SIZE = 6;
 
@@ -30,7 +30,7 @@ export const useFeed = () => {
   const [filter, setFilter] = useState<"all" | "mine">("all");
   const [showCreate, setShowCreate] = useState(false);
   const [error, setError] = useState("");
-  const { toast, showToast } = useToast();
+
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Refs to prevent race conditions between filter changes and IntersectionObserver
@@ -144,7 +144,6 @@ export const useFeed = () => {
     filter,
     showCreate,
     error,
-    toast,
     sentinelRef,
     setFilter,
     setShowCreate,

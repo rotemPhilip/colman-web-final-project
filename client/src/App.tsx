@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/useAuth";
+import Toast from "./components/Toast/Toast";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import Home from "./pages/Home/Home";
@@ -20,7 +21,9 @@ function App() {
   }
 
   return (
-    <Routes>
+    <>
+      <Toast />
+      <Routes>
       {user ? (
         <>
           <Route path="/" element={<Home />} />
@@ -36,6 +39,7 @@ function App() {
         </>
       )}
     </Routes>
+    </>
   );
 }
 

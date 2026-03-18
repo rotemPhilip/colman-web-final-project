@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback, type FormEvent } from "react";
-import { useParams } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import {
   getCommentsByPost,
@@ -8,56 +7,38 @@ import {
   deleteComment,
   type Comment,
 } from "../../services/comment.service";
-import { getPostById, type Post } from "../../services/post.service";
 import { showToast } from "../../components/Toast/Toast";
 
-const COMMENTS_PAGE_SIZE = 20;
+const PAGE_SIZE = 20;
 
-export const usePostDetail = () => {
-  const { postId } = useParams<{ postId: string }>();
+export const useComments = (
+  postId: string,
+  open: boolean,
+  onCountChange?: (delta: number) => void
+) => {
   const { user } = useAuth();
-
-  const [post, setPost] = useState<Post | null>(null);
-  const [loadingPost, setLoadingPost] = useState(true);
-
   const [comments, setComments] = useState<Comment[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [loadingComments, setLoadingComments] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
-
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  const [commentEdit, setCommentEdit] = useState<{ id: string | null; saving: boolean }>({ id: null, saving: false });
-
+  const [commentEdit, setCommentEdit] = useState<{ id: string | null; saving: boolean }>({
+    id: null,
+    saving: false,
+  });
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const sentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const fetchPost = async () => {
-      if (!postId) return;
-      setLoadingPost(true);
-      try {
-        const found = await getPostById(postId);
-        setPost(found);
-      } catch {
-        setError("Post not found.");
-      } finally {
-        setLoadingPost(false);
-      }
-    };
-    fetchPost();
-  }, [postId]);
+  const hasLoaded = useRef(false);
 
   const fetchComments = useCallback(
     async (pageNum: number, append: boolean) => {
-      if (!postId) return;
-      setLoadingComments(true);
+      setLoading(true);
       try {
-        const result = await getCommentsByPost(postId, pageNum, COMMENTS_PAGE_SIZE);
+        const result = await getCommentsByPost(postId, pageNum, PAGE_SIZE);
         if (append) {
           setComments((prev) => [...prev, ...result.comments]);
         } else {
@@ -68,21 +49,28 @@ export const usePostDetail = () => {
       } catch {
         setError("Failed to load comments.");
       } finally {
-        setLoadingComments(false);
+        setLoading(false);
         setInitialLoad(false);
       }
     },
     [postId]
   );
 
-  useEffect(() => { fetchComments(1, false); }, [fetchComments]);
+  // Lazy load — only fetch on first open
+  useEffect(() => {
+    if (open && !hasLoaded.current) {
+      hasLoaded.current = true;
+      fetchComments(1, false);
+    }
+  }, [open, fetchComments]);
 
+  // Infinite scroll
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+    if (!sentinel || !open) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loadingComments && page < totalPages) {
+        if (entries[0].isIntersecting && !loading && page < totalPages) {
           fetchComments(page + 1, true);
         }
       },
@@ -90,18 +78,18 @@ export const usePostDetail = () => {
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [page, totalPages, loadingComments, fetchComments]);
+  }, [open, page, totalPages, loading, fetchComments]);
 
   const handleSubmitComment = async (e: FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || !postId) return;
+    if (!newComment.trim()) return;
     setSubmitting(true);
     setError("");
     try {
       const comment = await createComment(postId, newComment.trim());
       setComments((prev) => [comment, ...prev]);
       setNewComment("");
-      setPost((prev) => prev ? { ...prev, commentCount: (prev.commentCount || 0) + 1 } : prev);
+      onCountChange?.(1);
       showToast("Comment posted!");
     } catch {
       setError("Failed to post comment.");
@@ -111,7 +99,8 @@ export const usePostDetail = () => {
     }
   };
 
-  const startEdit = (comment: Comment) => setCommentEdit({ id: comment._id, saving: false });
+  const startEdit = (comment: Comment) =>
+    setCommentEdit({ id: comment._id, saving: false });
 
   const cancelEdit = () => setCommentEdit({ id: null, saving: false });
 
@@ -136,9 +125,7 @@ export const usePostDetail = () => {
     try {
       await deleteComment(commentId);
       setComments((prev) => prev.filter((c) => c._id !== commentId));
-      setPost((prev) =>
-        prev ? { ...prev, commentCount: Math.max(0, (prev.commentCount || 1) - 1) } : prev
-      );
+      onCountChange?.(-1);
       showToast("Comment deleted.");
     } catch {
       setError("Failed to delete comment.");
@@ -148,12 +135,10 @@ export const usePostDetail = () => {
 
   return {
     user,
-    post,
-    loadingPost,
     comments,
     page,
     totalPages,
-    loadingComments,
+    loading,
     initialLoad,
     newComment,
     submitting,

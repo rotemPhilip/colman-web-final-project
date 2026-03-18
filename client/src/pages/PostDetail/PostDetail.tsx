@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import "./PostDetail.css";
 import AppNavbar from "../../components/AppNavbar/AppNavbar";
 import Avatar from "../../components/Avatar/Avatar";
-import Toast from "../../components/Toast/Toast";
 import LoadingSpinner from "../../components/LoadingSpinner/LoadingSpinner";
 import { getImageUrl } from "../../utils/image";
 import { usePostDetail } from "../../features/post/usePostDetail";
@@ -25,7 +24,6 @@ const PostDetail = () => {
     commentEdit,
     deletingId,
     error,
-    toast,
     sentinelRef,
     setNewComment,
     setDeletingId,
@@ -52,7 +50,6 @@ const PostDetail = () => {
 
   return (
     <div className="min-vh-100 bg-light">
-      <Toast toast={toast} />
       <AppNavbar showBack />
 
       <main className="container pb-5" style={{ maxWidth: 640 }}>

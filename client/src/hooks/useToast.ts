@@ -1,17 +1,15 @@
-import { useState } from "react";
-
 export interface Toast {
   message: string;
   type: "success" | "error";
 }
 
-export const useToast = () => {
-  const [toast, setToast] = useState<Toast | null>(null);
+type Listener = (toast: Toast | null) => void;
 
-  const showToast = (message: string, type: "success" | "error" = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+let _listener: Listener | null = null;
 
-  return { toast, showToast };
+export const _register = (fn: Listener) => { _listener = fn; };
+
+export const showToast = (message: string, type: "success" | "error" = "success") => {
+  _listener?.({ message, type });
+  setTimeout(() => _listener?.(null), 3000);
 };
