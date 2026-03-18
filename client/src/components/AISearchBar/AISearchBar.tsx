@@ -28,7 +28,7 @@ const AISearchBar = ({
       <input
         type="text"
         className="form-control border-0 py-2"
-        placeholder='AI Search — try &quot;best pasta&quot; or &quot;something sweet&quot;...'
+        placeholder='AI Search - try &quot;best pasta&quot; or &quot;something sweet&quot;...'
         value={searchQuery}
         onChange={(e) => onQueryChange(e.target.value)}
         style={{ boxShadow: "none" }}
