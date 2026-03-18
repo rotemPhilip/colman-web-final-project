@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 let genAI: GoogleGenAI | null = null;
 const getGenAI = () => {
   if (!genAI) {
-    genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "", httpOptions: { apiVersion: "v1" } });
+    genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
   }
   return genAI;
 };
@@ -78,7 +78,7 @@ export const splitIntoChunks = (text: string): string[] => {
  * Call Gemini embedding API for a single text.
  */
 export const generateEmbedding = async (text: string): Promise<number[]> => {
-  const result = await getGenAI().models.embedContent({ model: "text-embedding-004", contents: text });
+  const result = await getGenAI().models.embedContent({ model: "gemini-embedding-001", contents: text });
   return result.embeddings?.[0]?.values ?? [];
 };
 
