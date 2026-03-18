@@ -2,7 +2,11 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { aiSearch, type AISearchResponse } from "../../services/ai.service";
 
-const AISearch = () => {
+interface AISearchProps {
+  onActiveChange?: (active: boolean) => void;
+}
+
+const AISearch = ({ onActiveChange }: AISearchProps) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
@@ -18,6 +22,7 @@ const AISearch = () => {
     try {
       const data = await aiSearch(searchQuery.trim());
       setSearchResults(data);
+      onActiveChange?.(true);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setSearchError(msg || "AI search failed. Please try again.");
@@ -30,6 +35,7 @@ const AISearch = () => {
     setSearchQuery("");
     setSearchResults(null);
     setSearchError(null);
+    onActiveChange?.(false);
   };
 
   return (
@@ -73,6 +79,7 @@ const AISearch = () => {
           </button>
         </div>
       </form>
+
 
       {searching && (
         <div className="mt-3 d-flex align-items-center gap-2 px-1">

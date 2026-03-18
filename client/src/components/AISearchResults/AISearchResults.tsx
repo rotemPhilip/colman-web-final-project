@@ -43,9 +43,9 @@ const AISearchResults = ({ answer, sources, onClear }: AISearchResultsProps) => 
           ))}
         </div>
       )}
-      <div className="text-center mt-3">
-        <button className="btn btn-outline-secondary btn-sm" onClick={onClear}>
-          <i className="bi bi-x-lg me-1"></i>Clear
+      <div className="mt-3">
+        <button className="btn btn-link text-muted ps-0 small" onClick={onClear}>
+          <i className="bi bi-arrow-left me-1"></i>Back to feed
         </button>
       </div>
     </div>

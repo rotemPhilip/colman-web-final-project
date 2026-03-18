@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "../../context/useAuth";
 import Avatar from "../../components/Avatar/Avatar";
 import PostForm from "../../components/PostForm/PostForm";
@@ -30,6 +31,7 @@ const Feed = ({
   handleCreate, handleEditSave, handleDelete, handleToggleLike,
 }: FeedProps) => {
   const { user } = useAuth();
+  const [searchActive, setSearchActive] = useState(false);
 
   const emptyState = (
     <div className="card border-0 shadow-sm text-center empty-state animate-fade-in">
@@ -55,7 +57,7 @@ const Feed = ({
   return (
     <>
       <main className="container py-4" style={{ maxWidth: 680 }}>
-        <AISearch />
+        <AISearch onActiveChange={setSearchActive} />
 
         {error && (
           <div className="alert alert-danger py-2 small d-flex align-items-center gap-2 animate-fade-in">
@@ -82,7 +84,7 @@ const Feed = ({
           </div>
         )}
 
-        {initialLoad ? (
+        {!searchActive && (initialLoad ? (
           <div className="text-center py-5">
             <div className="spinner-border text-primary" role="status">
               <span className="visually-hidden">Loading...</span>
@@ -114,7 +116,7 @@ const Feed = ({
               )}
             </div>
           </div>
-        )}
+        ))}
       </main>
 
       {!showCreate && (
