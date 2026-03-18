@@ -7,7 +7,9 @@ import { findSimilarChunks, reindexAllPosts } from "../services/embedding";
 let genAI: GoogleGenerativeAI | null = null;
 const getGenAI = () => {
   if (!genAI) {
-    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+    const key = process.env.GEMINI_API_KEY || "";
+    console.log("[AI] Using GEMINI_API_KEY:", key ? `${key.slice(0, 8)}...${key.slice(-4)}` : "MISSING");
+    genAI = new GoogleGenerativeAI(key);
   }
   return genAI;
 };
@@ -110,7 +112,7 @@ export const aiSearch = async (
 
     // ── RAG Step 3: Prompt Augmentation + LLM Generation ──
     const model = getGenAI().getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash-lite",
       generationConfig: { temperature: 0.2 },
     });
 
