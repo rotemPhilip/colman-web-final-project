@@ -7,7 +7,6 @@ let genAI: GoogleGenAI | null = null;
 const getGenAI = () => {
   if (!genAI) {
     const key = process.env.GEMINI_API_KEY || "";
-    console.log("[Embedding] Using GEMINI_API_KEY:", key ? `${key.slice(0, 8)}...${key.slice(-4)}` : "MISSING");
     genAI = new GoogleGenAI({ apiKey: key });
   }
   return genAI;

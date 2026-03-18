@@ -3,17 +3,15 @@ import app from "../app";
 import Embedding from "../models/embedding";
 import { buildPostText, splitIntoChunks, cosineSimilarity } from "../services/embedding";
 
-// Mock the Google Generative AI module
-jest.mock("@google/generative-ai", () => {
+// Mock the Google GenAI module (new SDK used by the app)
+jest.mock("@google/genai", () => {
   const mockGenerateContent = jest.fn();
   const mockEmbedContent = jest.fn();
   return {
-    GoogleGenerativeAI: jest.fn().mockImplementation(() => ({
-      getGenerativeModel: ({ model }: { model: string }) => {
-        if (model === "gemini-embedding-001") {
-          return { embedContent: mockEmbedContent };
-        }
-        return { generateContent: mockGenerateContent };
+    GoogleGenAI: jest.fn().mockImplementation(() => ({
+      models: {
+        generateContent: mockGenerateContent,
+        embedContent: mockEmbedContent,
       },
     })),
     __mockGenerateContent: mockGenerateContent,
@@ -22,7 +20,7 @@ jest.mock("@google/generative-ai", () => {
 });
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { __mockGenerateContent, __mockEmbedContent } = require("@google/generative-ai");
+const { __mockGenerateContent, __mockEmbedContent } = require("@google/genai");
 
 // Helper: generate a deterministic fake embedding vector
 function fakeEmbedding(seed: number): number[] {
@@ -51,7 +49,7 @@ async function createPostWithEmbedding(
 ) {
   // Mock embedContent for the post creation (one chunk per short post)
   __mockEmbedContent.mockResolvedValueOnce({
-    embedding: { values: fakeEmbedding(embeddingSeed) },
+    embeddings: [{ values: fakeEmbedding(embeddingSeed) }],
   });
 
   const res = await request(app)
@@ -190,8 +188,9 @@ describe("AI Search API", () => {
 
   describe("POST /api/ai/search - No data", () => {
     it("should return empty answer when no embeddings exist", async () => {
+      const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       __mockEmbedContent.mockResolvedValueOnce({
-        embedding: { values: fakeEmbedding(0) },
+        embeddings: [{ values: fakeEmbedding(0) }],
       });
 
       const res = await request(app)
@@ -202,6 +201,7 @@ describe("AI Search API", () => {
       expect(res.status).toBe(200);
       expect(res.body.answer).toBe("No data available to search.");
       expect(res.body.sources).toEqual([]);
+      warnSpy.mockRestore();
     });
   });
 
@@ -210,7 +210,7 @@ describe("AI Search API", () => {
   describe("Embedding sync on Post CRUD", () => {
     it("should create chunk embeddings when a post is created", async () => {
       __mockEmbedContent.mockResolvedValueOnce({
-        embedding: { values: fakeEmbedding(1) },
+        embeddings: [{ values: fakeEmbedding(1) }],
       });
 
       const postRes = await request(app)
@@ -250,7 +250,7 @@ describe("AI Search API", () => {
 
       // Mock embedding for the update
       __mockEmbedContent.mockResolvedValueOnce({
-        embedding: { values: fakeEmbedding(4) },
+        embeddings: [{ values: fakeEmbedding(4) }],
       });
 
       await request(app)
@@ -292,17 +292,14 @@ describe("AI Search API", () => {
     it("should return structured { answer, sources } from RAG pipeline", async () => {
       // Mock query embedding — matches pizza post (seed 1)
       __mockEmbedContent.mockResolvedValueOnce({
-        embedding: { values: fakeEmbedding(1) },
+        embeddings: [{ values: fakeEmbedding(1) }],
       });
 
       __mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () =>
-            JSON.stringify({
-              answer: "Pizza Palace serves an amazing Margherita Pizza with fresh mozzarella.",
-              sources: [1],
-            }),
-        },
+        text: JSON.stringify({
+          answer: "Pizza Palace serves an amazing Margherita Pizza with fresh mozzarella.",
+          sources: [1],
+        }),
       });
 
       const res = await request(app)
@@ -320,17 +317,14 @@ describe("AI Search API", () => {
 
     it("should return answer with no sources when AI finds no relevant data", async () => {
       __mockEmbedContent.mockResolvedValueOnce({
-        embedding: { values: fakeEmbedding(1) },
+        embeddings: [{ values: fakeEmbedding(1) }],
       });
 
       __mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () =>
-            JSON.stringify({
-              answer: "I couldn't find any sushi-related posts in the data.",
-              sources: [],
-            }),
-        },
+        text: JSON.stringify({
+          answer: "I couldn't find any sushi-related posts in the data.",
+          sources: [],
+        }),
       });
 
       const res = await request(app)
@@ -345,17 +339,14 @@ describe("AI Search API", () => {
 
     it("should deduplicate sources from the same post", async () => {
       __mockEmbedContent.mockResolvedValueOnce({
-        embedding: { values: fakeEmbedding(1) },
+        embeddings: [{ values: fakeEmbedding(1) }],
       });
 
       __mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () =>
-            JSON.stringify({
-              answer: "Found relevant results.",
-              sources: [1, 1], // duplicate source index
-            }),
-        },
+        text: JSON.stringify({
+          answer: "Found relevant results.",
+          sources: [1, 1], // duplicate source index
+        }),
       });
 
       const res = await request(app)
@@ -379,14 +370,14 @@ describe("AI Search API", () => {
     });
 
     it("should handle unparseable AI response gracefully", async () => {
+      const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
       __mockEmbedContent.mockResolvedValueOnce({
-        embedding: { values: fakeEmbedding(5) },
+        embeddings: [{ values: fakeEmbedding(5) }],
       });
 
       __mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () => "This is not valid JSON at all",
-        },
+        text: "This is not valid JSON at all",
       });
 
       const res = await request(app)
@@ -397,11 +388,15 @@ describe("AI Search API", () => {
       expect(res.status).toBe(200);
       expect(res.body.answer).toBe("Could not process search. Please try a different query.");
       expect(res.body.sources).toEqual([]);
+      errorSpy.mockRestore();
+      logSpy.mockRestore();
     });
 
     it("should return 500 when AI service throws an error", async () => {
+      const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
       __mockEmbedContent.mockResolvedValueOnce({
-        embedding: { values: fakeEmbedding(5) },
+        embeddings: [{ values: fakeEmbedding(5) }],
       });
 
       __mockGenerateContent.mockRejectedValueOnce(new Error("Service unavailable"));
@@ -413,11 +408,15 @@ describe("AI Search API", () => {
 
       expect(res.status).toBe(500);
       expect(res.body.message).toBe("AI search failed. Please try again.");
+      errorSpy.mockRestore();
+      logSpy.mockRestore();
     });
 
     it("should return 429 when AI service returns rate limit error", async () => {
+      const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
       __mockEmbedContent.mockResolvedValueOnce({
-        embedding: { values: fakeEmbedding(5) },
+        embeddings: [{ values: fakeEmbedding(5) }],
       });
 
       const error = new Error("Rate limited") as Error & { status: number };
@@ -431,6 +430,8 @@ describe("AI Search API", () => {
 
       expect(res.status).toBe(429);
       expect(res.body.message).toBe("AI is busy right now. Please wait a few seconds and try again.");
+      errorSpy.mockRestore();
+      logSpy.mockRestore();
     });
   });
 });
