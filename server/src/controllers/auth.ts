@@ -41,14 +41,6 @@ export const register = async (
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Verify the hash is correct before saving
-    const hashVerified = await bcrypt.compare(password, hashedPassword);
-    if (!hashVerified) {
-      console.error("CRITICAL: bcrypt hash verification failed during registration");
-      res.status(500).json({ message: "Server error." });
-      return;
-    }
-
     const profileImage = req.file
       ? `/uploads/${req.file.filename}`
       : "";
@@ -110,6 +102,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const accessToken = generateAccessToken(user._id.toString());
     const refreshToken = generateRefreshToken(user._id.toString());
 
+    // Cap refresh tokens to prevent unbounded growth
+    if (user.refreshTokens.length >= 5) {
+      user.refreshTokens = user.refreshTokens.slice(-4);
+    }
     user.refreshTokens.push(refreshToken);
     await user.save();
 
@@ -165,6 +161,10 @@ export const googleLogin = async (
     const accessToken = generateAccessToken(user._id.toString());
     const refreshToken = generateRefreshToken(user._id.toString());
 
+    // Cap refresh tokens to prevent unbounded growth
+    if (user.refreshTokens.length >= 5) {
+      user.refreshTokens = user.refreshTokens.slice(-4);
+    }
     user.refreshTokens.push(refreshToken);
     await user.save();
 
@@ -210,9 +210,9 @@ export const refreshToken = async (
 
     const user = await User.findById(decoded.userId);
     if (!user || !user.refreshTokens.includes(token)) {
-      // possible token theft — clear all refresh tokens
+      // possible token theft — clear all refresh tokens atomically
       if (user) {
-        await User.findByIdAndUpdate(user._id, { refreshTokens: [] });
+        await User.findByIdAndUpdate(user._id, { $set: { refreshTokens: [] } });
       }
       res.status(403).json({ message: "Invalid refresh token." });
       return;
@@ -221,12 +221,11 @@ export const refreshToken = async (
     const newAccessToken = generateAccessToken(user._id.toString());
     const newRefreshToken = generateRefreshToken(user._id.toString());
 
-    // Atomic update: remove old token, add new one
+    // Replace old token with new one in a single $set
+    const updatedTokens = user.refreshTokens.filter((t) => t !== token);
+    updatedTokens.push(newRefreshToken);
     await User.findByIdAndUpdate(user._id, {
-      $pull: { refreshTokens: token },
-    });
-    await User.findByIdAndUpdate(user._id, {
-      $push: { refreshTokens: newRefreshToken },
+      $set: { refreshTokens: updatedTokens },
     });
 
     res.json({
@@ -256,7 +255,11 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
         process.env.JWT_REFRESH_SECRET as string
       ) as { userId: string };
     } catch {
-      // Even if token is expired, try to find and remove it
+      // Token expired — still try to remove it from DB
+      await User.updateMany(
+        { refreshTokens: token },
+        { $pull: { refreshTokens: token } }
+      );
       res.status(200).json({ message: "Logged out." });
       return;
     }

@@ -1,10 +1,10 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/useAuth";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Home from "./pages/Home";
-import Profile from "./pages/Profile";
-import PostDetail from "./pages/PostDetail";
+import Login from "./pages/Login/Login";
+import Register from "./pages/Register/Register";
+import Home from "./pages/Home/Home";
+import Profile from "./pages/Profile/Profile";
+import PostDetail from "./pages/PostDetail/PostDetail";
 
 function App() {
   const { user, loading } = useAuth();
@@ -21,26 +21,20 @@ function App() {
 
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={user ? <Navigate to="/" /> : <Login />}
-      />
-      <Route
-        path="/register"
-        element={user ? <Navigate to="/" /> : <Register />}
-      />
-      <Route
-        path="/"
-        element={user ? <Home /> : <Navigate to="/login" />}
-      />
-      <Route
-        path="/profile/:id"
-        element={user ? <Profile /> : <Navigate to="/login" />}
-      />
-      <Route
-        path="/post/:postId"
-        element={user ? <PostDetail /> : <Navigate to="/login" />}
-      />
+      {user ? (
+        <>
+          <Route path="/" element={<Home />} />
+          <Route path="/post/:postId" element={<PostDetail />} />
+          <Route path="/profile/:id" element={<Profile />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </>
+      ) : (
+        <>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="*" element={<Navigate to="/login" />} />
+        </>
+      )}
     </Routes>
   );
 }

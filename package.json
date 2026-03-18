@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "build": "npm run build --prefix server && npm run build --prefix client",
+    "deploy": "git pull origin main && npm install --prefix client && npm run build --prefix client && npm install --prefix server && npm run prod --prefix server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

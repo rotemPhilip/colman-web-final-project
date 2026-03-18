@@ -1,0 +1,97 @@
+/* ── Color variables ─────────────────────────────────── */
+:root {
+  --biteshare-orange: #ff6b35;
+  --biteshare-soft-orange: #fff4f0;
+}
+
+/* ── Chip filter buttons ─────────────────────────────── */
+.biteshare-chip {
+  border-radius: 20px;
+  padding: 0.375rem 1.25rem;
+  font-weight: 500;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.biteshare-chip-active {
+  background-color: var(--biteshare-soft-orange);
+  color: var(--biteshare-orange);
+  border: 1px solid transparent;
+  font-weight: 700;
+}
+
+.biteshare-chip-inactive {
+  background-color: transparent;
+  color: #6c757d;
+  border: 1px solid #ced4da;
+}
+
+.biteshare-chip-inactive:hover {
+  border-color: var(--biteshare-orange);
+  color: var(--biteshare-orange);
+}
+
+/* ── Floating Action Button ──────────────────────────── */
+.biteshare-fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  background-color: var(--biteshare-orange);
+  color: white;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.4);
+  z-index: 1050;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.biteshare-fab:hover {
+  background-color: #e55a2b;
+  transform: scale(1.07);
+}
+
+.biteshare-fab:active {
+  transform: scale(0.96);
+}
+
+/* ── AI Search bar — borderless light input ──────────── */
+.ai-search-bar {
+  background: #f5f5f5 !important;
+  border: none !important;
+  border-radius: 12px !important;
+}
+
+.ai-search-bar:focus {
+  background: #efefef !important;
+  box-shadow: none !important;
+}
+
+/* ── AI Search button \u2014 pressable gradient ───────────── */
+.ai-search-btn {
+  background: linear-gradient(135deg, #ff6b35, #f85a20) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.35) !important;
+  transition: all 0.2s ease !important;
+}
+
+.ai-search-btn:hover {
+  box-shadow: 0 4px 14px rgba(255, 107, 53, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+.ai-search-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(255, 107, 53, 0.3) !important;
+}
+
+
+
+

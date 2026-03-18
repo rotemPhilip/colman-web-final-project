@@ -6,6 +6,7 @@ import {
   getPostsByUser,
   updatePost,
   deletePost,
+  toggleLike,
 } from "../controllers/post";
 import authMiddleware from "../middleware/auth";
 import upload from "../middleware/upload";
@@ -281,5 +282,7 @@ router.put("/:id", authMiddleware, upload.single("image"), updatePost);
  *               $ref: '#/components/schemas/Error'
  */
 router.delete("/:id", authMiddleware, deletePost);
+
+router.post("/:id/like", authMiddleware, toggleLike);
 
 export default router;
