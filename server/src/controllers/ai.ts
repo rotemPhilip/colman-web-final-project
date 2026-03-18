@@ -129,7 +129,7 @@ Respond in JSON only (no markdown fences):
   "sources": [<indexes of the sources you used, e.g. 1, 2>]
 }`;
 
-    const result = await getGenAI().models.generateContent({ model: "gemini-2.0-flash", contents: prompt, config: { temperature: 0.2 } });
+    const result = await getGenAI().models.generateContent({ model: "gemini-2.0-flash-001", contents: prompt, config: { temperature: 0.2 } });
     const responseText = (result.text ?? "").trim();
 
     let parsed: { answer: string; sources: number[] };
