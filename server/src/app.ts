@@ -61,10 +61,14 @@ const startServer = async () => {
     };
     https.createServer(sslOptions, app).listen(PORT, () => {
       console.log(`Server running on HTTPS port ${PORT}`);
+      const key = process.env.GEMINI_API_KEY || "";
+      console.log(`[AI] GEMINI_API_KEY: ${key || "MISSING"}`);
     });
   } else {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      const key = process.env.GEMINI_API_KEY || "";
+      console.log(`[AI] GEMINI_API_KEY: ${key || "MISSING"}`);
     });
   }
 };

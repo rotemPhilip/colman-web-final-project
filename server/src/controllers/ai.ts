@@ -112,7 +112,7 @@ export const aiSearch = async (
 
     // ── RAG Step 3: Prompt Augmentation + LLM Generation ──
     const model = getGenAI().getGenerativeModel({
-      model: "gemini-2.0-flash-lite",
+      model: "gemini-2.0-flash",
       generationConfig: { temperature: 0.2 },
     });
 
