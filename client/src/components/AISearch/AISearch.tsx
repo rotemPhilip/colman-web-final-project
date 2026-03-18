@@ -7,17 +7,20 @@ const AISearch = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<AISearchResponse | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     setSearching(true);
     setSearchResults(null);
+    setSearchError(null);
     try {
       const data = await aiSearch(searchQuery.trim());
       setSearchResults(data);
-    } catch {
-      // silently fail
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setSearchError(msg || "AI search failed. Please try again.");
     } finally {
       setSearching(false);
     }
@@ -26,6 +29,7 @@ const AISearch = () => {
   const clear = () => {
     setSearchQuery("");
     setSearchResults(null);
+    setSearchError(null);
   };
 
   return (
@@ -76,6 +80,13 @@ const AISearch = () => {
             <span className="visually-hidden">Searching...</span>
           </div>
           <span className="small text-muted">AI is thinking...</span>
+        </div>
+      )}
+
+      {searchError && (
+        <div className="mt-3 alert alert-danger border-0 py-2 px-3 small d-flex align-items-center gap-2">
+          <i className="bi bi-exclamation-circle-fill"></i>
+          {searchError}
         </div>
       )}
 

@@ -91,6 +91,7 @@ export const aiSearch = async (
     const topChunks = await findSimilarChunks(query.trim(), TOP_K_CHUNKS);
 
     if (topChunks.length === 0) {
+      console.warn(`[AI] No embeddings found for query: "${query.trim()}" — Embedding collection may be empty. Run /api/ai/reindex.`);
       res.json({ answer: "No data available to search.", sources: [] });
       return;
     }
@@ -131,6 +132,7 @@ Respond in JSON only (no markdown fences):
 
     const result = await getGenAI().models.generateContent({ model: "gemini-2.5-flash", contents: prompt, config: { temperature: 0.2 } });
     const responseText = (result.text ?? "").trim();
+    console.log(`[AI] Raw Gemini response: ${responseText.slice(0, 300)}`);
 
     let parsed: { answer: string; sources: number[] };
     try {
@@ -140,10 +142,8 @@ Respond in JSON only (no markdown fences):
         .trim();
       parsed = JSON.parse(cleanJson);
     } catch {
-      res.json({
-        answer: "Could not process search. Please try a different query.",
-        sources: [],
-      });
+      console.error(`[AI] Failed to parse Gemini JSON response. Raw text: ${responseText}`);
+      res.status(500).json({ message: "AI search failed. Please try again." });
       return;
     }
 
@@ -181,8 +181,9 @@ Respond in JSON only (no markdown fences):
 
     res.json(responseData);
   } catch (err: unknown) {
-    console.error("AI search error:", err);
     const status = (err as { status?: number }).status;
+    const errMsg = (err as { message?: string }).message ?? String(err);
+    console.error(`[AI] Search error — status: ${status ?? "unknown"}, message: ${errMsg}`);
     if (status === 429) {
       res.status(429).json({ message: "AI is busy right now. Please wait a few seconds and try again." });
       return;
